@@ -1,8 +1,14 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 const Contact = () => {
     return (
         <main className="section-padding" style={{ minHeight: '60vh', marginTop: '80px' }}>
+            <Helmet>
+                <title>Contact Us | NovaCart</title>
+                <meta name="description" content="Get in touch with the NovaCart support team. We're here to help with your orders, grocery deliveries, and any questions you might have." />
+                <meta name="keywords" content="contact NovaCart, customer support, help center, grocery delivery help" />
+            </Helmet>
             <div className="container">
                 <div className="section-header">
                     <h2>Contact Us</h2>

@@ -1,8 +1,14 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 const About = () => {
     return (
         <main className="section-padding" style={{ minHeight: '60vh', marginTop: '80px' }}>
+            <Helmet>
+                <title>About Us | NovaCart</title>
+                <meta name="description" content="Learn about NovaCart's mission to bring fresh, organic, and locally-sourced groceries straight to your doorstep." />
+                <meta name="keywords" content="about NovaCart, our mission, fresh groceries, local farmers, organic food delivery" />
+            </Helmet>
             <div className="container">
                 <div className="section-header">
                     <h2>About NovaCart</h2>

@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './FeaturedProducts.css';
 
 const FeaturedProducts = () => {
     const navigate = useNavigate();
-    const products = [
-        { id: 1, name: 'Fresh Organic Tomatoes', price: '$4.99', oldPrice: '$6.50', image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', tag: 'Sale', category: 'Vegetables' },
-        { id: 2, name: 'Premium Bananas', price: '$2.49', oldPrice: null, image: 'https://images.unsplash.com/photo-1481349518771-20055b2a7b24?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', tag: 'Fresh', category: 'Fruits' },
-        { id: 3, name: 'Whole Wheat Bread', price: '$3.99', oldPrice: null, image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', tag: null, category: 'Bakery' },
-        { id: 4, name: 'Farm Fresh Eggs (12)', price: '$5.50', oldPrice: '$7.00', image: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', tag: 'Organic', category: 'Dairy' }
-    ];
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    setProducts(data.slice(0, 4)); // Only show top 4 featured products
+                }
+            } catch (err) {
+                console.error('Error fetching featured products:', err.message);
+            }
+        };
+
+        fetchProducts();
+    }, []);
 
     return (
         <section className="featured section-padding bg-light">
@@ -22,44 +33,53 @@ const FeaturedProducts = () => {
                 </div>
 
                 <div className="products-grid">
-                    {products.map((product, index) => (
-                        <div className={`product-card animate-fade delay-${index * 100}`} key={product.id}>
-                            {product.tag && (
-                                <div className={`product-tag ${product.tag === 'Sale' ? 'tag-sale' : 'tag-fresh'}`}>
-                                    {product.tag}
-                                </div>
-                            )}
-
-                            <div className="product-image-container">
-                                <img src={product.image} alt={product.name} className="product-image" />
-                                <button className="btn-icon heart-btn" onClick={() => navigate('/wishlist')}><i className="fa-regular fa-heart"></i></button>
-                            </div>
-
-                            <div className="product-info">
-                                <span className="product-category">{product.category}</span>
-                                <h3 className="product-title">{product.name}</h3>
-
-                                <div className="product-rating">
-                                    <i className="fa-solid fa-star"></i>
-                                    <i className="fa-solid fa-star"></i>
-                                    <i className="fa-solid fa-star"></i>
-                                    <i className="fa-solid fa-star"></i>
-                                    <i className="fa-solid fa-star-half-stroke"></i>
-                                    <span>(4.5)</span>
-                                </div>
-
-                                <div className="product-bottom">
-                                    <div className="product-price">
-                                        <span className="current-price">{product.price}</span>
-                                        {product.oldPrice && <span className="old-price">{product.oldPrice}</span>}
+                    {products.length === 0 ? (
+                        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b' }}>Check back soon for featured items!</p>
+                    ) : (
+                        products.map((product, index) => (
+                            <div className={`product-card animate-fade delay-${index * 100}`} key={product._id}>
+                                {product.tag && (
+                                    <div className={`product-tag ${product.tag === 'Sale' ? 'tag-sale' : 'tag-fresh'}`}>
+                                        {product.tag}
                                     </div>
-                                    <button className="add-to-cart-btn btn-primary" onClick={() => navigate('/cart')}>
-                                        <i className="fa-solid fa-plus"></i>
-                                    </button>
+                                )}
+
+                                <div className="product-image-container" style={{ height: '200px', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {/* Fallback image logic since we don't have images in DB yet */}
+                                    {product.image ? (
+                                        <img src={product.image} alt={product.name} className="product-image" />
+                                    ) : (
+                                        <i className="fa-solid fa-basket-shopping" style={{ fontSize: '4rem', color: '#d1d5db' }}></i>
+                                    )}
+                                    <button className="btn-icon heart-btn" onClick={() => navigate('/wishlist')}><i className="fa-regular fa-heart"></i></button>
+                                </div>
+
+                                <div className="product-info">
+                                    <span className="product-category">{product.category}</span>
+                                    <h3 className="product-title">{product.name}</h3>
+
+                                    <div className="product-rating">
+                                        <i className="fa-solid fa-star"></i>
+                                        <i className="fa-solid fa-star"></i>
+                                        <i className="fa-solid fa-star"></i>
+                                        <i className="fa-solid fa-star"></i>
+                                        <i className="fa-solid fa-star-half-stroke"></i>
+                                        <span>(4.5)</span>
+                                    </div>
+
+                                    <div className="product-bottom">
+                                        <div className="product-price">
+                                            <span className="current-price">${product.price.toFixed(2)}</span>
+                                            {product.oldPrice && <span className="old-price">{product.oldPrice}</span>}
+                                        </div>
+                                        <button className="add-to-cart-btn btn-primary" onClick={() => navigate('/cart')}>
+                                            <i className="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
         </section>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 const CategoriesPage = () => {
     const categories = [
@@ -14,6 +15,11 @@ const CategoriesPage = () => {
 
     return (
         <main className="categories section-padding" style={{ minHeight: '60vh', marginTop: '80px' }}>
+            <Helmet>
+                <title>Browse Categories | NovaCart</title>
+                <meta name="description" content="Explore a wide variety of grocery categories at NovaCart including fresh fruits, vegetables, dairy, bakery items, household goods, and more." />
+                <meta name="keywords" content="grocery categories, fresh fruits, vegetables, dairy products, bakery, household goods" />
+            </Helmet>
             <div className="container">
                 <div className="section-header">
                     <h2>All Categories</h2>

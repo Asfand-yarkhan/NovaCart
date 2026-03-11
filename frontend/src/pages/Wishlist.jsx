@@ -1,8 +1,14 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 const Wishlist = () => {
     return (
         <main className="section-padding" style={{ minHeight: '60vh', marginTop: '80px' }}>
+            <Helmet>
+                <title>Your Wishlist | NovaCart</title>
+                <meta name="description" content="Manage your saved items and favorite groceries. Add products to your wishlist to easily shop for them later on NovaCart." />
+                <meta name="keywords" content="wishlist, favorite groceries, saved items, buy later" />
+            </Helmet>
             <div className="container">
                 <div className="section-header">
                     <h2>Your Wishlist</h2>

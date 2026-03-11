@@ -1,0 +1,250 @@
+.hero {
+    position: relative;
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    padding-top: 5rem;
+    overflow: hidden;
+    background-color: var(--bg-main);
+}
+
+.hero-bg-shapes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+}
+
+.shape-1 {
+    top: -10%;
+    right: -5%;
+    width: 50vw;
+    height: 50vw;
+    background-color: var(--primary-light);
+}
+
+.shape-2 {
+    bottom: -10%;
+    left: -10%;
+    width: 40vw;
+    height: 40vw;
+    background-color: #fef08a;
+    /* Soft yellow */
+}
+
+.hero-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 3rem;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--primary-light);
+    color: var(--primary-hover);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    color: var(--text-main);
+}
+
+.hero-description {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    max-width: 90%;
+}
+
+.hero-buttons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.hero-btn-outline {
+    color: var(--text-main);
+    background: transparent;
+    padding: 0.875rem 1.75rem;
+}
+
+.hero-btn-outline:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.hero-stats {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    width: 100%;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat strong {
+    font-size: 1.75rem;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-main);
+}
+
+.stat span {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.divider {
+    width: 1px;
+    height: 3rem;
+    background-color: var(--border);
+}
+
+.hero-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.hero-image {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 2rem;
+    padding: 1rem;
+}
+
+.abstract-groceries {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 1.5rem;
+    overflow: hidden;
+}
+
+.main-image {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    border-radius: 1.5rem;
+}
+
+.floating-item {
+    position: absolute;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 20;
+    box-shadow: var(--shadow-md);
+    animation: float 4s ease-in-out infinite;
+}
+
+.floating-item i {
+    color: var(--primary);
+}
+
+.item-1 {
+    top: 10%;
+    left: -5%;
+}
+
+.item-2 {
+    bottom: 20%;
+    right: -5%;
+    animation-delay: 2s;
+    color: var(--secondary);
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+@media (max-width: 992px) {
+    .hero-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .hero-content {
+        align-items: center;
+    }
+
+    .hero-description {
+        max-width: 100%;
+    }
+
+    .hero-stats {
+        justify-content: center;
+    }
+
+    .item-1 {
+        left: 5%;
+    }
+
+    .item-2 {
+        right: 5%;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+    }
+}

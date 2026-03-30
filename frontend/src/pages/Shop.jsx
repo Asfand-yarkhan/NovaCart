@@ -1,77 +1,122 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
+
+const API_BASE = 'http://localhost:5000';
 
 const Shop = () => {
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('All');
+    const [addedId, setAddedId] = useState(null);
+    const { addToCart } = useCart();
+    const { toggleWishlist, isWishlisted } = useWishlist();
+    const { user } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await fetch('http://localhost:5000/api/products');
-                if (!response.ok) throw new Error('Failed to fetch products');
-                const data = await response.json();
-                setProducts(data);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchProducts();
+        fetch(`${API_BASE}/api/products`)
+            .then(r => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
+            .then(setProducts).catch(err => setError(err.message)).finally(() => setIsLoading(false));
     }, []);
 
+    const categories = ['All', ...new Set(products.map(p => p.category))];
+    const filtered = products.filter(p =>
+        (category === 'All' || p.category === category) &&
+        p.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const handleAddToCart = (p) => {
+        addToCart(p);
+        setAddedId(p._id);
+        setTimeout(() => setAddedId(null), 1500);
+    };
+
+    const handleWishlist = (p) => {
+        if (!user) { navigate('/login'); return; }
+        toggleWishlist(p);
+    };
+
     return (
-        <main className="section-padding" style={{ minHeight: '60vh', marginTop: '80px' }}>
+        <main style={{ minHeight: '60vh', marginTop: '80px', background: '#f8fafc', paddingBottom: '60px' }}>
             <Helmet>
                 <title>Shop Fresh Organic Groceries | NovaCart</title>
-                <meta name="description" content="Browse our complete catalog of farm-fresh fruits, crisp vegetables, dairy, meats, and household essentials. Shop NovaCart today for great deals." />
-                <meta name="keywords" content="buy groceries online, fresh food catalog, shop organic products, NovaCart store" />
+                <meta name="description" content="Browse our complete catalog of farm-fresh fruits, vegetables, dairy, meats and household essentials." />
+                <meta name="keywords" content="buy groceries online, fresh food catalog, organic products, NovaCart store" />
             </Helmet>
-            <div className="container">
-                <div className="section-header">
-                    <h2>Shop All Products</h2>
-                    <p>Browse our complete catalog of fresh and organic products.</p>
+
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg, #059669, #10b981)', padding: '40px 20px', marginBottom: '0', textAlign: 'center' }}>
+                <h1 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '800', margin: '0 0 8px' }}>Shop All Products</h1>
+                <p style={{ color: '#a7f3d0', margin: 0 }}>Browse our complete catalog of fresh and organic products</p>
+            </div>
+
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
+                {/* Search + Filter */}
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '30px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
+                        <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
+                        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..." style={{ width: '100%', padding: '11px 14px 11px 40px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {categories.map(cat => (
+                            <button key={cat} onClick={() => setCategory(cat)} style={{ padding: '9px 18px', borderRadius: '20px', border: '1.5px solid', borderColor: category === cat ? '#059669' : '#e2e8f0', background: category === cat ? '#059669' : '#fff', color: category === cat ? '#fff' : '#374151', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {isLoading ? (
-                    <div style={{ textAlign: 'center', padding: '50px' }}>Loading healthy groceries...</div>
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '2rem', marginBottom: '16px' }}></i><p>Loading products...</p></div>
                 ) : error ? (
-                    <div style={{ textAlign: 'center', color: 'red', padding: '50px' }}>Error loading products: {error}</div>
-                ) : products.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>No products available yet. Check back soon!</div>
+                    <div style={{ textAlign: 'center', color: '#ef4444', padding: '60px' }}>Error: {error}</div>
+                ) : filtered.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>No products found. {search && 'Try a different search term.'}</div>
                 ) : (
-                    <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px' }}>
-                        {products.map(product => (
-                            <div className="product-card" key={product._id} style={{ border: '1px solid #e5e7eb', borderRadius: '15px', padding: '20px', transition: 'all 0.3s ease', backgroundColor: '#fff' }}>
-                                <div className="product-badge" style={{ display: 'inline-block', padding: '5px 10px', backgroundColor: '#059669', color: 'white', borderRadius: '5px', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '15px' }}>
-                                    {product.category}
-                                </div>
-                                <div className="product-image" style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', borderRadius: '10px', overflow: 'hidden', marginBottom: '15px' }}>
-                                    <i className="fa-solid fa-basket-shopping" style={{ fontSize: '5rem', color: '#d1d5db' }}></i>
-                                </div>
-                                <div className="product-info">
-                                    <h3 className="product-title" style={{ fontSize: '1.2rem', color: '#111827', marginBottom: '10px', fontWeight: 'bold' }}>{product.name}</h3>
-
-                                    <div className="product-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                                        <div className="product-price">
-                                            <span className="current-price" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#059669' }}>${product.price.toFixed(2)}</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
+                        {filtered.map(product => {
+                            const imgSrc = product.image ? `${API_BASE}${product.image}` : null;
+                            const wishlisted = isWishlisted(product._id);
+                            const justAdded = addedId === product._id;
+                            return (
+                                <div key={product._id} style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+                                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.12)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; }}>
+                                    {/* Image */}
+                                    <Link to={`/product/${product.slug}`} style={{ textDecoration: 'none' }}>
+                                        <div style={{ height: '190px', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                                            {imgSrc ? <img src={imgSrc} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-basket-shopping" style={{ fontSize: '5rem', color: '#6ee7b7' }}></i>}
+                                            <span style={{ position: 'absolute', top: '10px', left: '10px', background: '#059669', color: '#fff', fontSize: '0.75rem', padding: '3px 10px', borderRadius: '20px', fontWeight: '600' }}>{product.category}</span>
+                                        </div>
+                                    </Link>
+                                    <div style={{ padding: '18px' }}>
+                                        <Link to={`/product/${product.slug}`} style={{ textDecoration: 'none' }}>
+                                            <h3 style={{ color: '#1e293b', marginBottom: '6px', fontSize: '1.05rem', fontWeight: '700' }}>{product.name}</h3>
+                                        </Link>
+                                        {product.description && <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '12px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                            <span style={{ fontSize: '1.35rem', fontWeight: '800', color: '#059669' }}>Rs. {product.price?.toFixed(2)}</span>
+                                            <span style={{ fontSize: '0.8rem', color: product.stock > 0 ? '#059669' : '#ef4444', fontWeight: '600' }}>{product.stock > 0 ? `${product.stock} left` : 'Out of stock'}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button onClick={() => handleWishlist(product)} style={{ width: '42px', height: '42px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: wishlisted ? '#fef2f2' : '#fff', color: wishlisted ? '#ef4444' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', transition: 'all 0.2s', flexShrink: 0 }}>
+                                                <i className={`fa-${wishlisted ? 'solid' : 'regular'} fa-heart`}></i>
+                                            </button>
+                                            <button onClick={() => handleAddToCart(product)} disabled={product.stock === 0} style={{ flex: 1, padding: '10px', background: justAdded ? '#10b981' : product.stock === 0 ? '#e2e8f0' : 'linear-gradient(135deg, #059669, #10b981)', color: product.stock === 0 ? '#94a3b8' : '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: product.stock === 0 ? 'not-allowed' : 'pointer', fontSize: '0.9rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}>
+                                                <i className={`fa-solid ${justAdded ? 'fa-check' : 'fa-cart-shopping'}`}></i>
+                                                {justAdded ? 'Added!' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                                            </button>
                                         </div>
                                     </div>
-
-                                    <div className="product-actions" style={{ display: 'flex', gap: '10px' }}>
-                                        <button className="btn-icon" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #d1d5db', backgroundColor: 'white', color: '#4b5563', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>
-                                            <i className="fa-regular fa-heart"></i>
-                                        </button>
-                                        <button className="btn-primary" style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '50px', backgroundColor: '#059669', color: 'white', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s ease' }}>
-                                            <i className="fa-solid fa-cart-shopping"></i> Add to Cart
-                                        </button>
-                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

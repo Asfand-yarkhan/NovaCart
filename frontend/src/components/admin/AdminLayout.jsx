@@ -1,8 +1,24 @@
-import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminLayout = () => {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/admin/login');
+    };
+
+    const navItems = [
+        { to: '/admin', label: 'Dashboard', icon: 'fa-chart-line', end: true },
+        { to: '/admin/products', label: 'Products', icon: 'fa-box-open' },
+        { to: '/admin/orders', label: 'Orders', icon: 'fa-cart-arrow-down' },
+        { to: '/admin/users', label: 'Users', icon: 'fa-users' },
+    ];
+
     return (
         <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
             <Helmet>
@@ -11,57 +27,52 @@ const AdminLayout = () => {
             </Helmet>
 
             {/* Sidebar */}
-            <aside style={{ width: '250px', backgroundColor: '#1e293b', color: '#fff', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '20px', fontSize: '1.5rem', fontWeight: 'bold', borderBottom: '1px solid #334155' }}>
-                    <i className="fa-solid fa-gauge-high" style={{ marginRight: '10px' }}></i> NovaAdmin
+            <aside style={{ width: '250px', backgroundColor: '#1e293b', color: '#fff', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+                <div style={{ padding: '20px', fontSize: '1.3rem', fontWeight: '800', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <i className="fa-solid fa-gauge-high" style={{ color: '#38bdf8' }}></i> NovaAdmin
                 </div>
-                <nav style={{ display: 'flex', flexDirection: 'column', padding: '20px 0' }}>
-                    <NavLink to="/admin" end style={({ isActive }) => ({
-                        padding: '15px 20px', color: isActive ? '#38bdf8' : '#cbd5e1', backgroundColor: isActive ? '#0f172a' : 'transparent', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'
-                    })}>
-                        <i className="fa-solid fa-chart-line"></i> Dashboard
-                    </NavLink>
-                    <NavLink to="/admin/products" style={({ isActive }) => ({
-                        padding: '15px 20px', color: isActive ? '#38bdf8' : '#cbd5e1', backgroundColor: isActive ? '#0f172a' : 'transparent', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'
-                    })}>
-                        <i className="fa-solid fa-box-open"></i> Products
-                    </NavLink>
-                    <NavLink to="/admin/orders" style={({ isActive }) => ({
-                        padding: '15px 20px', color: isActive ? '#38bdf8' : '#cbd5e1', backgroundColor: isActive ? '#0f172a' : 'transparent', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'
-                    })}>
-                        <i className="fa-solid fa-cart-arrow-down"></i> Orders
-                    </NavLink>
-                    <NavLink to="/admin/customers" style={({ isActive }) => ({
-                        padding: '15px 20px', color: isActive ? '#38bdf8' : '#cbd5e1', backgroundColor: isActive ? '#0f172a' : 'transparent', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'
-                    })}>
-                        <i className="fa-solid fa-users"></i> Customers
-                    </NavLink>
+                <nav style={{ display: 'flex', flexDirection: 'column', padding: '16px 0', flex: 1 }}>
+                    {navItems.map(item => (
+                        <NavLink key={item.to} to={item.to} end={item.end} style={({ isActive }) => ({
+                            padding: '13px 20px', color: isActive ? '#38bdf8' : '#cbd5e1', backgroundColor: isActive ? '#0f172a' : 'transparent',
+                            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem', fontWeight: isActive ? '700' : '400', borderLeft: isActive ? '3px solid #38bdf8' : '3px solid transparent', transition: 'all 0.2s'
+                        })}>
+                            <i className={`fa-solid ${item.icon}`} style={{ width: '16px' }}></i> {item.label}
+                        </NavLink>
+                    ))}
                 </nav>
-                <div style={{ marginTop: 'auto', padding: '20px' }}>
-                    <NavLink to="/" style={{ color: '#94a3b8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <i className="fa-solid fa-arrow-right-from-bracket"></i> Back to Store
-                    </NavLink>
+                <div style={{ padding: '16px 20px', borderTop: '1px solid #334155' }}>
+                    {user && (
+                        <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #059669, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem', fontWeight: '700' }}>
+                                {user.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div style={{ color: '#f1f5f9', fontSize: '0.85rem', fontWeight: '600' }}>{user.name}</div>
+                                <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Administrator</div>
+                            </div>
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <NavLink to="/" style={{ color: '#94a3b8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', padding: '6px 0' }}>
+                            <i className="fa-solid fa-store"></i> Back to Store
+                        </NavLink>
+                        <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', padding: '6px 0', textAlign: 'left' }}>
+                            <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                        </button>
+                    </div>
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* Topbar */}
-                <header style={{ height: '60px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
-                    <div>
-                        <i className="fa-solid fa-bars" style={{ cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}></i>
-                    </div>
+            {/* Main Content */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <header style={{ height: '60px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', flexShrink: 0 }}>
+                    <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Welcome back, <strong style={{ color: '#1e293b' }}>{user?.name}</strong></span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ position: 'relative' }}>
-                            <i className="fa-regular fa-bell" style={{ fontSize: '1.2rem', color: '#64748b' }}></i>
-                            <span style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#ef4444', color: '#fff', fontSize: '0.6rem', padding: '2px 5px', borderRadius: '10px' }}>3</span>
-                        </div>
-                        <div style={{ width: '35px', height: '35px', borderRadius: '50%', backgroundColor: '#cbd5e1', backgroundImage: 'url("https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff")', backgroundSize: 'cover' }}></div>
+                        <i className="fa-regular fa-bell" style={{ fontSize: '1.1rem', color: '#64748b', cursor: 'pointer' }}></i>
                     </div>
                 </header>
-
-                {/* Page Content */}
-                <main style={{ padding: '30px', flex: 1, overflowY: 'auto' }}>
+                <main style={{ padding: '28px', flex: 1, overflowY: 'auto' }}>
                     <Outlet />
                 </main>
             </div>

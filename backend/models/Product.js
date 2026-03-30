@@ -6,6 +6,11 @@ const productSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    description: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     category: {
         type: String,
         required: true
@@ -19,6 +24,10 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 0
+    },
+    image: {
+        type: String,
+        default: ''
     },
 
     // SEO Fields

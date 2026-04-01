@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,12 +12,31 @@ const Shop = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('All');
     const [addedId, setAddedId] = useState(null);
     const { addToCart } = useCart();
     const { toggleWishlist, isWishlisted } = useWishlist();
     const { user } = useAuth();
     const navigate = useNavigate();
+
+    // Read ?category= from URL
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlCategory = searchParams.get('category') || 'All';
+    const [category, setCategory] = useState(urlCategory);
+
+    // Sync category state when URL param changes (e.g. back/forward nav)
+    useEffect(() => {
+        setCategory(searchParams.get('category') || 'All');
+    }, [searchParams]);
+
+    const handleCategoryChange = (cat) => {
+        setCategory(cat);
+        if (cat === 'All') {
+            searchParams.delete('category');
+        } else {
+            searchParams.set('category', cat);
+        }
+        setSearchParams(searchParams, { replace: true });
+    };
 
     useEffect(() => {
         fetch(`${API_BASE}/api/products`)
@@ -52,8 +71,23 @@ const Shop = () => {
 
             {/* Header */}
             <div style={{ background: 'linear-gradient(135deg, #059669, #10b981)', padding: '40px 20px', marginBottom: '0', textAlign: 'center' }}>
-                <h1 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '800', margin: '0 0 8px' }}>Shop All Products</h1>
-                <p style={{ color: '#a7f3d0', margin: 0 }}>Browse our complete catalog of fresh and organic products</p>
+                <h1 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '800', margin: '0 0 8px' }}>
+                    {category === 'All' ? 'Shop All Products' : `${category}`}
+                </h1>
+                <p style={{ color: '#a7f3d0', margin: 0 }}>
+                    {category === 'All'
+                        ? 'Browse our complete catalog of fresh and organic products'
+                        : `Showing all products in ${category} · Click any other category to switch`
+                    }
+                </p>
+                {category !== 'All' && (
+                    <button
+                        onClick={() => handleCategoryChange('All')}
+                        style={{ marginTop: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: '#fff', padding: '7px 18px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                    >
+                        ✕ Clear Filter
+                    </button>
+                )}
             </div>
 
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
@@ -65,7 +99,7 @@ const Shop = () => {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {categories.map(cat => (
-                            <button key={cat} onClick={() => setCategory(cat)} style={{ padding: '9px 18px', borderRadius: '20px', border: '1.5px solid', borderColor: category === cat ? '#059669' : '#e2e8f0', background: category === cat ? '#059669' : '#fff', color: category === cat ? '#fff' : '#374151', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                            <button key={cat} onClick={() => handleCategoryChange(cat)} style={{ padding: '9px 18px', borderRadius: '20px', border: '1.5px solid', borderColor: category === cat ? '#059669' : '#e2e8f0', background: category === cat ? '#059669' : '#fff', color: category === cat ? '#fff' : '#374151', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}>
                                 {cat}
                             </button>
                         ))}

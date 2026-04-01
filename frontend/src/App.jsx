@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import ChatBot from './components/ChatBot';
 
 // Pages
 import Home from './pages/Home';
@@ -64,6 +65,7 @@ function App() {
                 </Route>
             </Routes>
             {!isAdminRoute && <Footer />}
+            {!isAdminRoute && <ChatBot />}
         </div>
     );
 }

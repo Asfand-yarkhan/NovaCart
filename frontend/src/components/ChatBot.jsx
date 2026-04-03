@@ -38,31 +38,33 @@ const MinimizeIcon = () => (
 );
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const formatTime = (date) => {
-  return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-};
+const formatTime = (date) =>
+  new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
 const getCategoryEmoji = (category = '') => {
   const cat = category.toLowerCase();
-  if (cat.includes('fruit')) return '🍎';
+  if (cat.includes('fruit'))                       return '🍎';
   if (cat.includes('vegetable') || cat.includes('veggie')) return '🥦';
-  if (cat.includes('dairy')) return '🥛';
+  if (cat.includes('dairy'))                       return '🥛';
   if (cat.includes('bakery') || cat.includes('bread')) return '🍞';
   if (cat.includes('meat') || cat.includes('chicken')) return '🍗';
   if (cat.includes('beverage') || cat.includes('drink')) return '🥤';
-  if (cat.includes('snack')) return '🍿';
-  if (cat.includes('grocery')) return '🛒';
+  if (cat.includes('snack'))                       return '🍿';
+  if (cat.includes('grocery'))                     return '🛒';
   return '🛍️';
 };
 
 const WELCOME_SUGGESTIONS = [
   '🔍 Search Products',
   '📦 Track My Order',
+  '🎟️ Apply Coupon',
   '🚚 Shipping Info',
   '🔄 Return Policy',
-  '💳 Payment Methods',
-  '🌟 Recommendations'
+  '🌟 Recommendations',
 ];
+
+// Abandoned cart threshold — 10 minutes
+const ABANDONED_THRESHOLD_MS = 10 * 60 * 1000;
 
 // ── Product Card ──────────────────────────────────────────────────────────
 const ProductCard = ({ product, onAdd }) => {
@@ -85,13 +87,9 @@ const ProductCard = ({ product, onAdd }) => {
           onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
         />
       ) : null}
-      <div
-        className="nc-product-img-placeholder"
-        style={{ display: product.image ? 'none' : 'flex' }}
-      >
+      <div className="nc-product-img-placeholder" style={{ display: product.image ? 'none' : 'flex' }}>
         {getCategoryEmoji(product.category)}
       </div>
-
       <div className="nc-product-body">
         <div className="nc-product-name" title={product.name}>{product.name}</div>
         <div className="nc-product-cat">{product.category}</div>
@@ -99,11 +97,7 @@ const ProductCard = ({ product, onAdd }) => {
         {product.stock === 0 ? (
           <div className="nc-out-stock">Out of Stock</div>
         ) : (
-          <button
-            className={`nc-add-btn ${added ? 'nc-added' : ''}`}
-            onClick={handleAdd}
-            disabled={product.stock === 0}
-          >
+          <button className={`nc-add-btn ${added ? 'nc-added' : ''}`} onClick={handleAdd} disabled={product.stock === 0}>
             {added ? '✓ Added!' : '+ Add to Cart'}
           </button>
         )}
@@ -112,8 +106,84 @@ const ProductCard = ({ product, onAdd }) => {
   );
 };
 
+// ── Remove Item Card ──────────────────────────────────────────────────────
+const RemoveItemCard = ({ item, onConfirm, onCancel }) => (
+  <div className="nc-remove-card">
+    <div className="nc-remove-card-info">
+      <span className="nc-remove-icon">🗑️</span>
+      <div>
+        <div className="nc-remove-name">{item.name}</div>
+        <div className="nc-remove-meta">₨{item.price?.toLocaleString()} × {item.quantity}</div>
+      </div>
+    </div>
+    <div className="nc-remove-actions">
+      <button className="nc-remove-confirm-btn" onClick={() => onConfirm(item.productId)}>
+        Remove
+      </button>
+      <button className="nc-remove-cancel-btn" onClick={onCancel}>
+        Keep
+      </button>
+    </div>
+  </div>
+);
+
+// ── Multi-Remove Card (multiple matches) ──────────────────────────────────
+const MultiRemoveCard = ({ items, onConfirm }) => (
+  <div className="nc-remove-multi">
+    {items.map(item => (
+      <div key={item.productId} className="nc-remove-multi-row">
+        <span>{item.name}</span>
+        <button className="nc-remove-confirm-btn" onClick={() => onConfirm(item.productId)}>
+          Remove
+        </button>
+      </div>
+    ))}
+  </div>
+);
+
+// ── Coupon Apply Card ─────────────────────────────────────────────────────
+const CouponCard = ({ couponData, onApply, applied }) => (
+  <div className="nc-coupon-card">
+    <div className="nc-coupon-header">
+      <span className="nc-coupon-icon">🎟️</span>
+      <div>
+        <div className="nc-coupon-code">{couponData.code}</div>
+        <div className="nc-coupon-desc">{couponData.description}</div>
+      </div>
+    </div>
+    {!applied ? (
+      <button className="nc-coupon-apply-btn" onClick={() => onApply(couponData)}>
+        Apply to Cart
+      </button>
+    ) : (
+      <div className="nc-coupon-applied">✅ Applied!</div>
+    )}
+  </div>
+);
+
+// ── Abandoned Cart Banner ─────────────────────────────────────────────────
+const AbandonedCartBanner = ({ cartCount, cartTotal, onCheckout, onDismiss }) => (
+  <div className="nc-abandoned-banner">
+    <div className="nc-abandoned-icon">🛒</div>
+    <div className="nc-abandoned-content">
+      <div className="nc-abandoned-title">You left items in your cart!</div>
+      <div className="nc-abandoned-sub">
+        {cartCount} item{cartCount > 1 ? 's' : ''} · ₨{cartTotal.toLocaleString()}
+      </div>
+    </div>
+    <div className="nc-abandoned-actions">
+      <button className="nc-abandoned-checkout-btn" onClick={onCheckout}>
+        Checkout →
+      </button>
+      <button className="nc-abandoned-dismiss-btn" onClick={onDismiss}>
+        ✕
+      </button>
+    </div>
+  </div>
+);
+
 // ── Chat Message ──────────────────────────────────────────────────────────
-const ChatMessage = ({ msg, onAddToCart, onQuickReply, onNavigate }) => {
+const ChatMessage = ({ msg, onAddToCart, onRemoveFromCart, onQuickReply, onNavigate, onApplyCoupon }) => {
   const isUser = msg.role === 'user';
 
   return (
@@ -123,10 +193,7 @@ const ChatMessage = ({ msg, onAddToCart, onQuickReply, onNavigate }) => {
       </div>
       <div className="nc-msg-content">
         {/* Main bubble */}
-        <div
-          className="nc-bubble"
-          dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.text) }}
-        />
+        <div className="nc-bubble" dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.text) }} />
 
         {/* Product grid */}
         {msg.products?.length > 0 && (
@@ -135,6 +202,35 @@ const ChatMessage = ({ msg, onAddToCart, onQuickReply, onNavigate }) => {
               <ProductCard key={p._id} product={p} onAdd={onAddToCart} />
             ))}
           </div>
+        )}
+
+        {/* Remove item confirmation */}
+        {msg.removeItem && !msg.removeDone && (
+          <RemoveItemCard
+            item={msg.removeItem}
+            onConfirm={(productId) => onRemoveFromCart(productId, msg.id)}
+            onCancel={() => onQuickReply('Continue shopping')}
+          />
+        )}
+        {msg.removeDone && (
+          <div className="nc-remove-done">✅ Item removed from your cart!</div>
+        )}
+
+        {/* Multiple remove options */}
+        {msg.removeItems?.length > 0 && !msg.removeDone && (
+          <MultiRemoveCard
+            items={msg.removeItems}
+            onConfirm={(productId) => onRemoveFromCart(productId, msg.id)}
+          />
+        )}
+
+        {/* Coupon card */}
+        {msg.couponData && (
+          <CouponCard
+            couponData={msg.couponData}
+            onApply={onApplyCoupon}
+            applied={msg.couponApplied}
+          />
         )}
 
         {/* Navigation action button */}
@@ -175,73 +271,83 @@ const TypingIndicator = () => (
 
 // ── Main ChatBot Component ────────────────────────────────────────────────
 const ChatBot = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen]       = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages]   = useState([]);
+  const [input, setInput]         = useState('');
+  const [isTyping, setIsTyping]   = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(1); // initial greeting counts
+  const [unreadCount, setUnreadCount] = useState(1);
+  const [showAbandonedBanner, setShowAbandonedBanner] = useState(false);
 
-  const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const messagesEndRef    = useRef(null);
+  const inputRef          = useRef(null);
   const suggestionsTimeout = useRef(null);
+  const abandonedShown    = useRef(false); // prevent repeat on same session open
 
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, removeFromCart, applyDiscount, cartCount, cartTotal, lastCartActivity, chatCartItems } = useCart();
   const { user } = useAuth();
 
-  // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   }, []);
 
-  // Append a bot message
   const appendBotMessage = useCallback((data) => {
     const msg = {
-      id: Date.now(),
+      id: Date.now() + Math.random(),
       role: 'bot',
-      text: data.text || '',
-      products: data.products || [],
+      text:         data.text || '',
+      products:     data.products || [],
       quickReplies: data.quickReplies || [],
-      action: data.action || null,
+      action:       data.action || null,
+      removeItem:   data.removeItem || null,
+      removeItems:  data.removeItems || null,
+      couponData:   data.couponData || null,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, msg]);
     scrollToBottom();
   }, [scrollToBottom]);
 
-  // Initial greeting on first open
+  // ── Abandoned cart check on open ─────────────────────────────────
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setShowWelcome(false);
       setTimeout(() => {
         appendBotMessage({
           text: `👋 Hi${user ? ` **${user.name}**` : ''}! Welcome to **NovaCart** — your freshest grocery experience!\n\nI'm **Nova**, your AI shopping assistant. How can I help you today?`,
-          quickReplies: ['🔍 Search Products', '📦 Track My Order', '🚚 Shipping Info', '🌟 Trending']
+          quickReplies: ['🔍 Search Products', '📦 Track My Order', '🎟️ Apply Coupon', '🌟 Trending']
         });
         setUnreadCount(0);
+
+        // Check for abandoned cart (after greeting delay)
+        setTimeout(() => {
+          if (!abandonedShown.current && cartCount > 0 && lastCartActivity) {
+            const timeSince = Date.now() - lastCartActivity;
+            if (timeSince >= ABANDONED_THRESHOLD_MS) {
+              setShowAbandonedBanner(true);
+              abandonedShown.current = true;
+            }
+          }
+        }, 1000);
       }, 400);
     }
     if (isOpen) {
       setUnreadCount(0);
       setTimeout(() => inputRef.current?.focus(), 300);
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  // Handle close with animation
   const handleClose = () => {
     setIsClosing(true);
-    setTimeout(() => {
-      setIsOpen(false);
-      setIsClosing(false);
-    }, 250);
+    setTimeout(() => { setIsOpen(false); setIsClosing(false); }, 250);
   };
 
-  // Core: send message
+  // ── Core: send message ────────────────────────────────────────────
   const handleSend = useCallback(async (text) => {
     const msgText = (text || input).trim();
     if (!msgText || isTyping) return;
@@ -249,8 +355,8 @@ const ChatBot = () => {
     setSuggestions([]);
     setInput('');
     setShowWelcome(false);
+    setShowAbandonedBanner(false);
 
-    // Add user message
     setMessages(prev => [...prev, {
       id: Date.now(),
       role: 'user',
@@ -258,50 +364,68 @@ const ChatBot = () => {
       timestamp: new Date()
     }]);
     scrollToBottom();
-
     setIsTyping(true);
 
-    // Simulated delay for realism
-    await new Promise(r => setTimeout(r, 600 + Math.random() * 600));
+    await new Promise(r => setTimeout(r, 600 + Math.random() * 500));
 
-    const response = await sendMessage(msgText);
+    const response = await sendMessage(msgText, [], chatCartItems);
     setIsTyping(false);
     appendBotMessage(response);
 
-    if (!isOpen) {
-      setUnreadCount(prev => prev + 1);
-    }
+    if (!isOpen) setUnreadCount(prev => prev + 1);
+    if (response.closeChat) setTimeout(() => handleClose(), 1800);
+  }, [input, isTyping, isOpen, appendBotMessage, scrollToBottom, chatCartItems]);
 
-    // Handle close intent
-    if (response.closeChat) {
-      setTimeout(() => handleClose(), 1800);
-    }
-  }, [input, isTyping, isOpen, appendBotMessage, scrollToBottom]);
-
-  // Quick reply clicks
   const handleQuickReply = useCallback((text) => {
-    // Strip emoji prefix if present
+    // Strip emoji prefix
     const clean = text.replace(/^[\u{1F300}-\u{1FFFF}]\s*/u, '').trim();
     handleSend(clean);
   }, [handleSend]);
 
-  // Navigate inside chat
   const handleNavigate = useCallback((url) => {
     navigate(url);
     handleClose();
   }, [navigate]);
 
-  // Add to cart from chatbot
+  // ── Add to cart ────────────────────────────────────────────────────
   const handleAddToCart = useCallback((product) => {
     addToCart(product, 1);
     appendBotMessage({
       text: `✅ **${product.name}** added to your cart!\n\nQuantity: 1 × ₨${product.price?.toLocaleString()}\n\nContinue shopping or proceed to checkout.`,
-      quickReplies: ['Go to cart', 'Continue shopping'],
+      quickReplies: ['Go to cart', 'Continue shopping', 'Apply coupon'],
       action: { type: 'navigate', url: '/cart', label: '🛒 View Cart' }
     });
   }, [addToCart, appendBotMessage]);
 
-  // Autocomplete
+  // ── Remove from cart (inline confirm) ────────────────────────────
+  const handleRemoveFromCart = useCallback(async (productId, msgId) => {
+    await removeFromCart(productId);
+    // Mark the message as done so buttons disappear
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, removeDone: true, removeItem: null, removeItems: null } : m
+    ));
+    appendBotMessage({
+      text: `✅ Item removed from your cart!\n\nAnything else you'd like to do?`,
+      quickReplies: ['View cart', 'Continue shopping', 'Apply coupon'],
+      action: { type: 'navigate', url: '/cart', label: '🛒 View Cart' }
+    });
+  }, [removeFromCart, appendBotMessage]);
+
+  // ── Apply coupon from chat ─────────────────────────────────────────
+  const handleApplyCoupon = useCallback(async (couponData) => {
+    applyDiscount(couponData);
+    // Mark the coupon card as applied in the message
+    setMessages(prev => prev.map(m =>
+      m.couponData?.code === couponData.code ? { ...m, couponApplied: true } : m
+    ));
+    appendBotMessage({
+      text: `🎉 Coupon **${couponData.code}** applied to your cart!\n\nYour discount will be reflected at checkout. Ready to order?`,
+      quickReplies: ['Go to checkout', 'Continue shopping'],
+      action: { type: 'navigate', url: '/checkout', label: '🛍️ Checkout Now' }
+    });
+  }, [applyDiscount, appendBotMessage]);
+
+  // ── Autocomplete ──────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInput(val);
@@ -317,13 +441,8 @@ const ChatBot = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-    if (e.key === 'Escape') {
-      setSuggestions([]);
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === 'Escape') setSuggestions([]);
   };
 
   const handleSuggestionClick = (s) => {
@@ -365,6 +484,16 @@ const ChatBot = () => {
             </button>
           </div>
 
+          {/* Abandoned Cart Banner */}
+          {showAbandonedBanner && (
+            <AbandonedCartBanner
+              cartCount={cartCount}
+              cartTotal={cartTotal}
+              onCheckout={() => { handleNavigate('/cart'); }}
+              onDismiss={() => setShowAbandonedBanner(false)}
+            />
+          )}
+
           {/* Messages or Welcome */}
           <div className="nc-messages" id="nc-messages-container">
             {showWelcome && messages.length === 0 ? (
@@ -374,11 +503,7 @@ const ChatBot = () => {
                 <p>Your AI shopping assistant for NovaCart. Ask me anything about products, orders, shipping, or tips!</p>
                 <div className="nc-welcome-chips">
                   {WELCOME_SUGGESTIONS.map((s, i) => (
-                    <button
-                      key={i}
-                      className="nc-welcome-chip"
-                      onClick={() => handleQuickReply(s)}
-                    >
+                    <button key={i} className="nc-welcome-chip" onClick={() => handleQuickReply(s)}>
                       {s}
                     </button>
                   ))}
@@ -391,8 +516,10 @@ const ChatBot = () => {
                     key={msg.id}
                     msg={msg}
                     onAddToCart={handleAddToCart}
+                    onRemoveFromCart={handleRemoveFromCart}
                     onQuickReply={handleQuickReply}
                     onNavigate={handleNavigate}
+                    onApplyCoupon={handleApplyCoupon}
                   />
                 ))}
                 {isTyping && <TypingIndicator />}
@@ -407,11 +534,7 @@ const ChatBot = () => {
             {suggestions.length > 0 && (
               <div className="nc-suggestions">
                 {suggestions.map((s, i) => (
-                  <div
-                    key={i}
-                    className="nc-suggestion-item"
-                    onClick={() => handleSuggestionClick(s)}
-                  >
+                  <div key={i} className="nc-suggestion-item" onClick={() => handleSuggestionClick(s)}>
                     <span className="nc-suggestion-icon">
                       {s.type === 'product' ? getCategoryEmoji(s.category) : '⚡'}
                     </span>
@@ -427,7 +550,7 @@ const ChatBot = () => {
                 ref={inputRef}
                 id="nc-chat-input"
                 className="nc-input"
-                placeholder='Ask me anything... "show me fruits under ₨500"'
+                placeholder='Ask Nova... "remove milk" · "apply WELCOME10" · "show fruits"'
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
@@ -444,9 +567,7 @@ const ChatBot = () => {
                 <SendIcon />
               </button>
             </div>
-            <div className="nc-input-hint">
-              Powered by Nova AI · NovaCart
-            </div>
+            <div className="nc-input-hint">Powered by Nova AI · NovaCart</div>
           </div>
         </div>
       )}

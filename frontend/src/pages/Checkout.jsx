@@ -5,14 +5,18 @@ import { useCart } from '../context/CartContext';
 import { api } from '../utils/api';
 
 const Checkout = () => {
-    const { cartItems, cartTotal, clearCart } = useCart();
+    const {
+        cartItems, cartTotal, clearCart,
+        appliedCoupon, discountAmount, finalTotal
+    } = useCart();
     const navigate = useNavigate();
-    const DELIVERY_FEE = 150;
-    const total = cartTotal + DELIVERY_FEE;
+
+    const DELIVERY_FEE = appliedCoupon?.type === 'shipping' ? 0 : 150;
+    const grandTotal   = finalTotal + DELIVERY_FEE;
 
     const [form, setForm] = useState({ fullName: '', street: '', city: '', state: '', zip: '', country: 'Pakistan' });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError]     = useState('');
 
     const handleOrder = async (e) => {
         e.preventDefault();
@@ -20,20 +24,22 @@ const Checkout = () => {
         setLoading(true); setError('');
         try {
             const items = cartItems.map(i => ({
-                product: i.product._id,
-                name: i.product.name,
-                price: i.product.price,
+                product:  i.product._id,
+                name:     i.product.name,
+                price:    i.product.price,
                 quantity: i.quantity,
-                image: i.product.image || ''
+                image:    i.product.image || ''
             }));
             const order = await api('/orders', {
                 method: 'POST',
                 body: JSON.stringify({
                     items,
                     shippingAddress: form,
-                    subtotal: cartTotal,
+                    subtotal:    cartTotal,
                     deliveryFee: DELIVERY_FEE,
-                    total
+                    discount:    discountAmount,
+                    couponCode:  appliedCoupon?.code || null,
+                    total:       grandTotal
                 })
             });
             await clearCart();
@@ -43,14 +49,18 @@ const Checkout = () => {
         } finally { setLoading(false); }
     };
 
-    const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' };
+    const inputStyle = {
+        width: '100%', padding: '11px 14px',
+        border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box'
+    };
 
     return (
         <main style={{ minHeight: '100vh', marginTop: '80px', background: '#f8fafc', paddingBottom: '60px' }}>
             <Helmet><title>Checkout | NovaCart</title></Helmet>
             <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px' }}>
                 <h1 style={{ fontSize: '2rem', color: '#1e293b', marginBottom: '30px' }}>
-                    <i className="fa-solid fa-lock" style={{ marginRight: '12px', color: '#059669' }}></i>Secure Checkout
+                    <i className="fa-solid fa-lock" style={{ marginRight: '12px', color: '#059669' }} />Secure Checkout
                 </h1>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '30px', alignItems: 'start' }}>
                     {/* Shipping Form */}
@@ -85,12 +95,12 @@ const Checkout = () => {
                         </div>
 
                         <div style={{ background: '#f0fdf4', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-                            <h4 style={{ color: '#059669', marginBottom: '8px' }}><i className="fa-solid fa-cash-register" style={{ marginRight: '8px' }}></i>Payment Method</h4>
+                            <h4 style={{ color: '#059669', marginBottom: '8px' }}><i className="fa-solid fa-cash-register" style={{ marginRight: '8px' }} />Payment Method</h4>
                             <p style={{ color: '#374151', fontSize: '0.9rem', margin: 0 }}>💵 <strong>Cash on Delivery</strong> — Pay when your order arrives.</p>
                         </div>
 
-                        <button type="submit" disabled={loading || cartItems.length === 0} style={{ width: '100%', padding: '14px', background: loading ? '#9ca3af' : 'linear-gradient(135deg, #059669, #10b981)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                            {loading ? 'Placing Order...' : `Place Order — Rs. ${total.toFixed(2)}`}
+                        <button type="submit" id="place-order-btn" disabled={loading || cartItems.length === 0} style={{ width: '100%', padding: '14px', background: loading ? '#9ca3af' : 'linear-gradient(135deg, #059669, #10b981)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                            {loading ? 'Placing Order...' : `Place Order — Rs. ${grandTotal.toFixed(2)}`}
                         </button>
                     </form>
 
@@ -107,12 +117,33 @@ const Checkout = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '8px' }}>
                                 <span>Subtotal</span><span>Rs. {cartTotal.toFixed(2)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '16px' }}>
-                                <span>Delivery</span><span>Rs. {DELIVERY_FEE}</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '8px' }}>
+                                <span>Delivery</span>
+                                <span style={{ color: appliedCoupon?.type === 'shipping' ? '#059669' : undefined }}>
+                                    {appliedCoupon?.type === 'shipping' ? 'FREE' : `Rs. ${DELIVERY_FEE}`}
+                                </span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', fontSize: '1.1rem', color: '#1e293b' }}>
-                                <span>Total</span><span style={{ color: '#059669' }}>Rs. {total.toFixed(2)}</span>
+                            {appliedCoupon && appliedCoupon.type !== 'shipping' && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', marginBottom: '8px' }}>
+                                    <span>🎟️ Discount ({appliedCoupon.code})</span>
+                                    <span>− Rs. {discountAmount.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {/* Applied coupon badge */}
+                            {appliedCoupon && (
+                                <div style={{ background: '#f0fdf4', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '8px 12px', marginBottom: '12px', fontSize: '0.8rem', color: '#059669' }}>
+                                    🎟️ <strong>{appliedCoupon.code}</strong> — {appliedCoupon.description}
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', fontSize: '1.1rem', color: '#1e293b', marginTop: '8px' }}>
+                                <span>Total</span>
+                                <span style={{ color: '#059669' }}>Rs. {grandTotal.toFixed(2)}</span>
                             </div>
+                            {appliedCoupon && (
+                                <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '0.8rem', color: '#059669', fontWeight: '600' }}>
+                                    🎉 You're saving Rs. {discountAmount.toFixed(2)}!
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

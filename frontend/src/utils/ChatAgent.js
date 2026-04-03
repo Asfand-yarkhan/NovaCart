@@ -4,11 +4,11 @@ const API_BASE = 'http://localhost:5000/api';
 
 /**
  * Send a message to the chatbot API and receive a structured response.
- * @param {string} message - User's message
- * @param {Array} context - Recent conversation context (optional)
- * @returns {Promise<Object>} — { intent, text, products?, action?, quickReplies? }
+ * @param {string} message  - User's message
+ * @param {Array}  context  - Recent conversation context (optional)
+ * @param {Array}  cartItems - Current cart items for context (optional)
  */
-export const sendMessage = async (message, context = []) => {
+export const sendMessage = async (message, context = [], cartItems = []) => {
     const token = localStorage.getItem('novacart_token');
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -17,20 +17,36 @@ export const sendMessage = async (message, context = []) => {
         const res = await fetch(`${API_BASE}/chatbot/query`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ message, context: context.slice(-6) })
+            body: JSON.stringify({ message, context: context.slice(-6), cartItems })
         });
         if (!res.ok) throw new Error('Server error');
         return await res.json();
     } catch (err) {
-        // Offline fallback — rule-based client-side responses
         return offlineFallback(message);
     }
 };
 
 /**
+ * Validate a coupon code against the backend.
+ * @param {string} code      - Coupon code
+ * @param {number} cartTotal - Current cart total for min-order check
+ */
+export const applyCouponAPI = async (code, cartTotal = 0) => {
+    try {
+        const res = await fetch(`${API_BASE}/chatbot/apply-coupon`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, cartTotal })
+        });
+        if (!res.ok) throw new Error('Server error');
+        return await res.json();
+    } catch {
+        return { success: false, message: '⚠️ Could not validate coupon. Please try again.' };
+    }
+};
+
+/**
  * Fetch autocomplete suggestions for the given query prefix.
- * @param {string} q - Query prefix
- * @returns {Promise<Array>} — Array of suggestion objects
  */
 export const fetchSuggestions = async (q) => {
     if (!q || q.trim().length < 2) return [];
@@ -49,18 +65,14 @@ export const fetchSuggestions = async (q) => {
  */
 const offlineFallback = (message) => {
     const msg = message.toLowerCase();
-    if (/hi|hello|hey/.test(msg)) {
+    if (/hi|hello|hey/.test(msg))
         return { intent: 'greeting', text: "👋 Hi! I'm Nova, NovaCart's assistant. It seems I'm having trouble connecting. Please check your internet connection and try again!", quickReplies: [] };
-    }
-    if (/ship|deliver/.test(msg)) {
+    if (/ship|deliver/.test(msg))
         return { intent: 'faq', text: "🚚 **Shipping:** Standard delivery takes 3-5 days at ₨150. Free shipping above ₨2,000!", quickReplies: ['More questions'] };
-    }
-    if (/return|refund/.test(msg)) {
+    if (/return|refund/.test(msg))
         return { intent: 'faq', text: "🔄 **Returns:** 7-day return window. Items must be unopened. Refund in 3-5 business days.", quickReplies: ['More questions'] };
-    }
-    if (/payment/.test(msg)) {
+    if (/payment/.test(msg))
         return { intent: 'faq', text: "💳 **Payments:** We accept Credit/Debit cards, Cash on Delivery, JazzCash, and Easypaisa.", quickReplies: ['More questions'] };
-    }
     return {
         intent: 'offline',
         text: "⚠️ I'm having trouble connecting to the server. Please try again in a moment!\n\nFor immediate help, visit our **Shop** or **Contact Us** page.",
@@ -69,8 +81,7 @@ const offlineFallback = (message) => {
 };
 
 /**
- * Format a markdown-ish text to safe display content.
- * Converts **bold** and *italic* markers for rendering.
+ * Format markdown-ish text to safe HTML display content.
  */
 export const parseMarkdown = (text) => {
     if (!text) return '';

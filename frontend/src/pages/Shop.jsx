@@ -51,6 +51,7 @@ const Shop = () => {
     );
 
     const handleAddToCart = (p) => {
+        if (!user) { navigate('/login'); return; }
         addToCart(p);
         setAddedId(p._id);
         setTimeout(() => setAddedId(null), 1500);

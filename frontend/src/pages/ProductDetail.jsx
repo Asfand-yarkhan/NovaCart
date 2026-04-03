@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://localhost:5000';
 
 const ProductDetail = () => {
     const { slug } = useParams();
+    const navigate = useNavigate();
     const { addToCart } = useCart();
     const { toggleWishlist, isWishlisted } = useWishlist();
+    const { user } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -30,6 +33,7 @@ const ProductDetail = () => {
     const imgSrc = product.image ? `${API_BASE}${product.image}` : null;
 
     const handleAddToCart = () => {
+        if (!user) { navigate('/login'); return; }
         addToCart(product, qty);
         setAdded(true);
         setTimeout(() => setAdded(false), 2000);

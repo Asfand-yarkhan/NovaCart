@@ -69,7 +69,7 @@ const FeaturedProducts = () => {
 
                                     <div className="product-bottom">
                                         <div className="product-price">
-                                            <span className="current-price">${product.price.toFixed(2)}</span>
+                                            <span className="current-price">Rs. {product.price.toFixed(2)}</span>
                                             {product.oldPrice && <span className="old-price">{product.oldPrice}</span>}
                                         </div>
                                         <button className="add-to-cart-btn btn-primary" onClick={() => navigate('/cart')}>

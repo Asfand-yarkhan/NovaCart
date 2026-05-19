@@ -17,7 +17,26 @@ export const CartProvider = ({ children }) => {
         if (token && user) {
             setCartLoading(true);
             api('/users/cart')
-                .then(data => { setCartItems(data); })
+                .then(async data => { 
+                    // Check for pending item first
+                    const pendingItemStr = localStorage.getItem('pendingCartItem');
+                    if (pendingItemStr) {
+                        try {
+                            const pendingProduct = JSON.parse(pendingItemStr);
+                            localStorage.removeItem('pendingCartItem');
+                            
+                            const updatedCart = await api('/users/cart', {
+                                method: 'POST',
+                                body: JSON.stringify({ productId: pendingProduct._id, quantity: 1 })
+                            });
+                            setCartItems(updatedCart);
+                            return; // we got the updated cart
+                        } catch (e) {
+                            console.error("Failed to add pending cart item:", e);
+                        }
+                    }
+                    setCartItems(data); 
+                })
                 .catch(() => setCartItems([]))
                 .finally(() => setCartLoading(false));
         } else if (!user) {

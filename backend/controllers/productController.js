@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { mergeSeoIntoProduct, generateProductSeo } = require('../utils/seoGenerator');
 
 // Get all products
 const getProducts = async (req, res) => {
@@ -21,11 +22,29 @@ const getProductBySlug = async (req, res) => {
     }
 };
 
+// Preview / generate SEO with AI (Admin)
+const generateSeo = async (req, res) => {
+    try {
+        const { name, description, category, price, excludeId } = req.body;
+        if (!name?.trim()) {
+            return res.status(400).json({ message: 'Product name is required for SEO generation' });
+        }
+        const seo = await generateProductSeo(
+            { name, description, category, price },
+            { excludeId }
+        );
+        res.json({ ...seo, aiPowered: Boolean(process.env.GEMINI_API_KEY) });
+    } catch (error) {
+        res.status(500).json({ message: 'SEO generation failed', error: error.message });
+    }
+};
+
 // Create a new product (Admin)
 const createProduct = async (req, res) => {
     try {
-        const data = { ...req.body };
+        let data = { ...req.body };
         if (req.file) data.image = `/uploads/${req.file.filename}`;
+        data = await mergeSeoIntoProduct(data);
         const product = new Product(data);
         const savedProduct = await product.save();
         res.status(201).json(savedProduct);
@@ -38,8 +57,9 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const data = { ...req.body };
+        let data = { ...req.body };
         if (req.file) data.image = `/uploads/${req.file.filename}`;
+        data = await mergeSeoIntoProduct(data, { excludeId: id, enrichDescription: false });
         const updatedProduct = await Product.findByIdAndUpdate(id, data, { new: true, runValidators: true });
         if (!updatedProduct) return res.status(404).json({ message: 'Product not found' });
         res.status(200).json(updatedProduct);
@@ -60,4 +80,11 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, getProductBySlug, createProduct, updateProduct, deleteProduct };
+module.exports = {
+    getProducts,
+    getProductBySlug,
+    generateSeo,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+};

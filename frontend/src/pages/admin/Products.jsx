@@ -14,6 +14,7 @@ const Products = () => {
     const [error, setError] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [seoGenerating, setSeoGenerating] = useState(false);
 
     useEffect(() => { fetchProducts(); }, []);
 
@@ -46,6 +47,45 @@ const Products = () => {
             setIsEditing(false); setCurrentProduct(null);
         } catch (err) { alert(err.message); }
         finally { setSaving(false); }
+    };
+
+    const handleGenerateSeo = async () => {
+        if (!currentProduct?.name?.trim()) {
+            alert('Please enter a product name first.');
+            return;
+        }
+        setSeoGenerating(true);
+        try {
+            const token = localStorage.getItem('novacart_token');
+            const res = await fetch(`${API_BASE}/api/products/generate-seo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name: currentProduct.name,
+                    description: currentProduct.description,
+                    category: currentProduct.category,
+                    price: currentProduct.price,
+                    excludeId: currentProduct._id || undefined,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'SEO generation failed');
+            setCurrentProduct((prev) => ({
+                ...prev,
+                slug: data.slug || prev.slug,
+                metaTitle: data.metaTitle || prev.metaTitle,
+                metaDescription: data.metaDescription || prev.metaDescription,
+                metaKeywords: data.metaKeywords || prev.metaKeywords,
+                description: prev.description?.trim() ? prev.description : (data.description || prev.description),
+            }));
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setSeoGenerating(false);
+        }
     };
 
     const handleDelete = async (id) => {
@@ -98,8 +138,35 @@ const Products = () => {
                             {imageFile && <p style={{ fontSize: '0.8rem', color: '#059669', marginTop: '6px' }}>✓ New image selected: {imageFile.name}</p>}
                         </div>
                         {/* SEO */}
-                        <div style={{ gridColumn: '1 / -1', marginTop: '8px' }}><h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#334155' }}>SEO Optimization</h3></div>
-                        <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>URL Slug *</label><input type="text" value={currentProduct.slug} onChange={e => setCurrentProduct({ ...currentProduct, slug: e.target.value })} placeholder="e.g., fresh-organic-tomatoes" style={inputStyle} required /><small style={{ color: '#94a3b8', fontSize: '0.78rem' }}>URL-friendly identifier (no spaces, use hyphens)</small></div>
+                        <div style={{ gridColumn: '1 / -1', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#334155', margin: 0, flex: 1 }}>SEO Optimization</h3>
+                            <button
+                                type="button"
+                                onClick={handleGenerateSeo}
+                                disabled={seoGenerating || !currentProduct.name?.trim()}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: seoGenerating ? '#9ca3af' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: seoGenerating ? 'not-allowed' : 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '0.85rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                }}
+                            >
+                                <i className={`fa-solid ${seoGenerating ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
+                                {seoGenerating ? 'Generating...' : 'Generate SEO with AI'}
+                            </button>
+                        </div>
+                        <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 14px', fontSize: '0.85rem', color: '#166534' }}>
+                            <i className="fa-solid fa-robot" style={{ marginRight: '8px' }}></i>
+                            Empty SEO fields are filled automatically when you save. Use the button above to preview or refresh AI-generated SEO.
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>URL Slug</label><input type="text" value={currentProduct.slug} onChange={e => setCurrentProduct({ ...currentProduct, slug: e.target.value })} placeholder="Auto-generated from product name if empty" style={inputStyle} /><small style={{ color: '#94a3b8', fontSize: '0.78rem' }}>Leave blank for AI to create a URL-friendly slug</small></div>
                         <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Meta Title</label><input type="text" value={currentProduct.metaTitle} onChange={e => setCurrentProduct({ ...currentProduct, metaTitle: e.target.value })} placeholder="Title shown in search engines (50–60 chars)" style={inputStyle} /></div>
                         <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Meta Description</label><textarea rows="3" value={currentProduct.metaDescription} onChange={e => setCurrentProduct({ ...currentProduct, metaDescription: e.target.value })} placeholder="Shown in search results (150–160 chars)" style={{ ...inputStyle, resize: 'vertical' }}></textarea></div>
                         <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Meta Keywords</label><input type="text" value={currentProduct.metaKeywords} onChange={e => setCurrentProduct({ ...currentProduct, metaKeywords: e.target.value })} placeholder="Comma separated keywords" style={inputStyle} /></div>

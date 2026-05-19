@@ -235,7 +235,7 @@ const ChatMessage = ({ msg, onAddToCart, onRemoveFromCart, onQuickReply, onNavig
 
         {/* Navigation action button */}
         {msg.action?.type === 'navigate' && msg.action.label && (
-          <button className="nc-nav-btn" onClick={() => onNavigate(msg.action.url)}>
+          <button className="nc-nav-btn" onClick={() => onNavigate(msg.action.url, msg.action.state)}>
             🔗 {msg.action.label}
           </button>
         )}
@@ -382,20 +382,29 @@ const ChatBot = () => {
     handleSend(clean);
   }, [handleSend]);
 
-  const handleNavigate = useCallback((url) => {
-    navigate(url);
+  const handleNavigate = useCallback((url, state) => {
+    navigate(url, { state });
     handleClose();
   }, [navigate]);
 
   // ── Add to cart ────────────────────────────────────────────────────
   const handleAddToCart = useCallback((product) => {
+    if (!user) {
+      localStorage.setItem('pendingCartItem', JSON.stringify(product));
+      appendBotMessage({
+        text: `🔒 First login to add **${product.name}** to your cart.\n\nAfter logging in, it will be automatically added!`,
+        quickReplies: ['Continue shopping'],
+        action: { type: 'navigate', url: '/login', state: { from: { pathname: '/cart' } }, label: '🔑 Go to Login' }
+      });
+      return;
+    }
     addToCart(product, 1);
     appendBotMessage({
       text: `✅ **${product.name}** added to your cart!\n\nQuantity: 1 × ₨${product.price?.toLocaleString()}\n\nContinue shopping or proceed to checkout.`,
       quickReplies: ['Go to cart', 'Continue shopping', 'Apply coupon'],
       action: { type: 'navigate', url: '/cart', label: '🛒 View Cart' }
     });
-  }, [addToCart, appendBotMessage]);
+  }, [addToCart, appendBotMessage, user]);
 
   // ── Remove from cart (inline confirm) ────────────────────────────
   const handleRemoveFromCart = useCallback(async (productId, msgId) => {

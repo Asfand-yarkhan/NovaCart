@@ -1,8 +1,16 @@
+const path = require('path');
+const Module = require('module');
+const originalNodeModulePaths = Module._nodeModulePaths;
+Module._nodeModulePaths = function(from) {
+    const paths = originalNodeModulePaths(from);
+    paths.push(path.resolve(__dirname, 'node_modules'));
+    return paths;
+};
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 const productRoutes = require('./routes/productRoutes');
 const authRoutes = require('./routes/authRoutes');

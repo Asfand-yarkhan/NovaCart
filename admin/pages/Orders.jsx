@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../../utils/api';
+import { api } from '../../frontend/src/utils/api';
 
 const statusOptions = ['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 const statusColor = { processing: '#f59e0b', confirmed: '#3b82f6', shipped: '#8b5cf6', delivered: '#059669', cancelled: '#ef4444' };

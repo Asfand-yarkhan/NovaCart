@@ -1,5 +1,5 @@
-const Product = require('../models/Product');
-const Order = require('../models/Order');
+const Product = require('../../database/models/Product');
+const Order = require('../../database/models/Order');
 
 // ─── Valid Coupons ────────────────────────────────────────────────────────────
 const VALID_COUPONS = {

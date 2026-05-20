@@ -1,5 +1,5 @@
-const Order = require('../models/Order');
-const User = require('../models/User');
+const Order = require('../../database/models/Order');
+const User = require('../../database/models/User');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 // @desc  Create order after payment

@@ -1,5 +1,5 @@
-const Product = require('../models/Product');
-const { mergeSeoIntoProduct, generateProductSeo } = require('../utils/seoGenerator');
+const Product = require('../../database/models/Product');
+const { mergeSeoIntoProduct, generateProductSeo } = require('../../seo/seoGenerator');
 
 // Get all products
 const getProducts = async (req, res) => {

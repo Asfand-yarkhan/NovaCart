@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../frontend/src/context/AuthContext';
 
 const AdminLogin = () => {
     const { user, loading: authLoading, login, logout } = useAuth();

@@ -1,8 +1,22 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+const path = require('path');
+const Module = require('module');
+
+// 1. Add to the entrypoint's own search paths
+module.paths.push(path.resolve(__dirname, '../../backend/node_modules'));
+
+// 2. Hook to resolve for all required child modules
+const originalNodeModulePaths = Module._nodeModulePaths;
+Module._nodeModulePaths = function(from) {
+    const paths = originalNodeModulePaths(from);
+    paths.push(path.resolve(__dirname, '../../backend/node_modules'));
+    return paths;
+};
+
+require('dotenv').config({ path: path.resolve(__dirname, '../../backend/.env') });
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const catalog = require('../data/productsSeed');
-const { mergeSeoIntoProduct, slugify } = require('../utils/seoGenerator');
+const { mergeSeoIntoProduct, slugify } = require('../../seo/seoGenerator');
 
 const seed = async () => {
     const force = process.argv.includes('--force');

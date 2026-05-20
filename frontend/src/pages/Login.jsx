@@ -9,15 +9,19 @@ const Login = () => {
     const location = useLocation();
     const from = location.state?.from?.pathname || '/';
     const [form, setForm] = useState({ email: '', password: '' });
-    const [error, setError] = useState('');
+    const [error, setError] = useState(location.state?.error || '');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(''); setLoading(true);
         try {
-            await login(form.email, form.password);
-            navigate(from, { replace: true });
+            const data = await login(form.email, form.password);
+            if (data.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             setError(err.message);
         } finally { setLoading(false); }

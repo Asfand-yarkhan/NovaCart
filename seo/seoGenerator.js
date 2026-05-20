@@ -1,4 +1,4 @@
-const Product = require('../models/Product');
+const Product = require('../database/models/Product');
 
 const slugify = (text) =>
     String(text || '')

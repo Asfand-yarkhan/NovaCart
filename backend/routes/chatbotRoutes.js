@@ -7,7 +7,7 @@ const optionalAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const jwt = require('jsonwebtoken');
-        const User = require('../models/User');
+        const User = require('../../database/models/User');
         try {
             const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
             req.user = await User.findById(decoded.id).select('-password');

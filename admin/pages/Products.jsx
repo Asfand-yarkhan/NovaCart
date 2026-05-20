@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { api } from '../../utils/api';
+import { api } from '../../frontend/src/utils/api';
 
 const API_BASE = 'http://localhost:5000';
 
 const emptyProduct = { name: '', description: '', price: '', stock: '', category: '', slug: '', metaTitle: '', metaDescription: '', metaKeywords: '' };
+
+const slugify = (text) => {
+    return String(text || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+};
 
 const Products = () => {
     const [products, setProducts] = useState([]);
@@ -17,6 +27,36 @@ const Products = () => {
     const [seoGenerating, setSeoGenerating] = useState(false);
 
     useEffect(() => { fetchProducts(); }, []);
+
+    const handleNameChange = (newName) => {
+        setCurrentProduct(prev => {
+            const updated = { ...prev, name: newName };
+            const oldSlug = slugify(prev.name || '');
+            if (!prev.slug || prev.slug === oldSlug) {
+                updated.slug = slugify(newName);
+            }
+            const oldMetaTitle = prev.name?.trim() ? `${prev.name.trim()} | Buy Fresh Online at NovaCart` : '';
+            if (!prev.metaTitle || prev.metaTitle === oldMetaTitle) {
+                updated.metaTitle = newName.trim() ? `${newName.trim()} | Buy Fresh Online at NovaCart` : '';
+            }
+            const oldKeywords = prev.name?.trim() ? prev.name.trim().toLowerCase().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean).join(', ') : '';
+            if (!prev.metaKeywords || prev.metaKeywords === oldKeywords) {
+                updated.metaKeywords = newName.trim() ? newName.trim().toLowerCase().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean).join(', ') : '';
+            }
+            return updated;
+        });
+    };
+
+    const handleDescriptionChange = (newDesc) => {
+        setCurrentProduct(prev => {
+            const updated = { ...prev, description: newDesc };
+            const oldMetaDesc = prev.description ? (prev.description.length > 155 ? prev.description.slice(0, 152) + '...' : prev.description) : '';
+            if (!prev.metaDescription || prev.metaDescription === oldMetaDesc) {
+                updated.metaDescription = newDesc ? (newDesc.length > 155 ? newDesc.slice(0, 152) + '...' : newDesc) : '';
+            }
+            return updated;
+        });
+    };
 
     const fetchProducts = async () => {
         setIsLoading(true);
@@ -121,11 +161,11 @@ const Products = () => {
                     <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px' }}>
                         {/* Basic */}
                         <div style={{ gridColumn: '1 / -1' }}><h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#334155' }}>Basic Information</h3></div>
-                        <div><label style={labelStyle}>Product Name *</label><input type="text" value={currentProduct.name} onChange={e => setCurrentProduct({ ...currentProduct, name: e.target.value })} style={inputStyle} required /></div>
+                        <div><label style={labelStyle}>Product Name *</label><input type="text" value={currentProduct.name} onChange={e => handleNameChange(e.target.value)} style={inputStyle} required /></div>
                         <div><label style={labelStyle}>Category *</label><input type="text" value={currentProduct.category} onChange={e => setCurrentProduct({ ...currentProduct, category: e.target.value })} style={inputStyle} required /></div>
                         <div><label style={labelStyle}>Price (Rs.) *</label><input type="number" step="any" value={currentProduct.price} onChange={e => setCurrentProduct({ ...currentProduct, price: parseFloat(e.target.value) })} style={inputStyle} required /></div>
                         <div><label style={labelStyle}>Stock Quantity *</label><input type="number" value={currentProduct.stock} onChange={e => setCurrentProduct({ ...currentProduct, stock: parseInt(e.target.value) })} style={inputStyle} required /></div>
-                        <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Description</label><textarea rows="3" value={currentProduct.description} onChange={e => setCurrentProduct({ ...currentProduct, description: e.target.value })} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Product description shown on the detail page..."></textarea></div>
+                        <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Description</label><textarea rows="3" value={currentProduct.description} onChange={e => handleDescriptionChange(e.target.value)} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Product description shown on the detail page..."></textarea></div>
                         <div style={{ gridColumn: '1 / -1' }}>
                             <label style={labelStyle}>Product Image</label>
                             <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])} style={{ ...inputStyle, padding: '8px' }} />

@@ -1,9 +1,9 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
-import AdminRoute from './components/AdminRoute';
+import AdminRoute from '../../admin/components/AdminRoute';
 import ChatBot from './components/ChatBot';
 
 // Pages
@@ -22,12 +22,11 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 
 // Admin
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminLayout from './components/admin/AdminLayout';
-import Dashboard from './pages/admin/Dashboard';
-import Products from './pages/admin/Products';
-import AdminOrders from './pages/admin/Orders';
-import AdminUsers from './pages/admin/Users';
+import AdminLayout from '../../admin/components/AdminLayout';
+import Dashboard from '../../admin/pages/Dashboard';
+import Products from '../../admin/pages/Products';
+import AdminOrders from '../../admin/pages/Orders';
+import AdminUsers from '../../admin/pages/Users';
 
 function App() {
     const location = useLocation();
@@ -55,7 +54,7 @@ function App() {
                 <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
 
                 {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/login" element={<Navigate to="/login" replace />} />
                 <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                     <Route index element={<Dashboard />} />
                     <Route path="products" element={<Products />} />
@@ -65,7 +64,7 @@ function App() {
                 </Route>
             </Routes>
             {!isAdminRoute && <Footer />}
-            {!isAdminRoute && <ChatBot />}
+            <ChatBot />
         </div>
     );
 }

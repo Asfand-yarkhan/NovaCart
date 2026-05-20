@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../frontend/src/context/AuthContext';
 
 const AdminRoute = ({ children }) => {
     const { user, loading } = useAuth();
+    const location = useLocation();
 
     if (loading) {
         return (
@@ -13,10 +14,10 @@ const AdminRoute = ({ children }) => {
         );
     }
 
-    if (!user) return <Navigate to="/admin/login" replace />;
+    if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
 
     if (user.role !== 'admin') {
-        return <Navigate to="/admin/login" replace state={{ error: 'Please sign in with an admin account (admin@novacart.com).' }} />;
+        return <Navigate to="/login" replace state={{ error: 'Access denied. Please sign in with an admin account (admin@novacart.com).', from: location }} />;
     }
 
     return children;

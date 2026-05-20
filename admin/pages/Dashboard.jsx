@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../../utils/api';
+import { api } from '../../frontend/src/utils/api';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, customers: 0 });

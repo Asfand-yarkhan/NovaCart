@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../frontend/src/context/AuthContext';
 
 const AdminLayout = () => {
     const { user, logout } = useAuth();
@@ -9,7 +9,7 @@ const AdminLayout = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/admin/login');
+        navigate('/login');
     };
 
     const navItems = [

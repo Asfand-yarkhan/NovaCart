@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const Product = require('../models/Product');
+const User = require('../../database/models/User');
+const Product = require('../../database/models/Product');
 
 // @desc  Get profile
 // @route GET /api/users/profile

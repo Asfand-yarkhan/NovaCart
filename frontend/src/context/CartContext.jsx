@@ -139,13 +139,13 @@ export const CartProvider = ({ children }) => {
 
     // ── Cart context for chatbot (flattened list) ────────
     const chatCartItems = cartItems.map(i => ({
-        productId: i.product._id,
-        _id: i.product._id,
-        name: i.product.name,
-        price: i.product.price,
+        productId: i.product?._id || '',
+        _id: i.product?._id || '',
+        name: i.product?.name || 'Unknown Product',
+        price: i.product?.price || 0,
         quantity: i.quantity,
-        image: i.product.image,
-        category: i.product.category,
+        image: i.product?.image || '',
+        category: i.product?.category || '',
     }));
 
     return (

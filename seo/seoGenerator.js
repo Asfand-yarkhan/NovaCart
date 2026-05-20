@@ -41,7 +41,9 @@ const generateSeoFallback = ({ name, description, category, price }) => {
         .filter(Boolean)
         .join(', ');
 
-    return { slug, metaTitle, metaDescription, metaKeywords };
+    const fallbackDesc = description?.trim() || `Enjoy our fresh and premium ${name} from the ${category} category, carefully selected and packed for maximum freshness and quality. Perfect for your daily needs.`;
+
+    return { slug, metaTitle, metaDescription, metaKeywords, description: fallbackDesc };
 };
 
 const parseJsonFromText = (text) => {
@@ -59,9 +61,9 @@ const generateSeoWithGemini = async (product) => {
     if (!apiKey) return null;
 
     const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-    const prompt = `You are an SEO specialist for NovaCart, a Pakistani online grocery and e-commerce store.
+    const prompt = `You are an SEO and copywriting specialist for NovaCart, a Pakistani online grocery and e-commerce store.
 
-Generate SEO metadata for this product. Use natural English suitable for Pakistan shoppers.
+Generate premium SEO metadata and an attractive product description for this product. Use natural English suitable for Pakistan shoppers.
 
 Product data:
 - Name: ${product.name}
@@ -74,7 +76,7 @@ Rules:
 - metaTitle: 50–60 characters, compelling, include brand "NovaCart" if it fits
 - metaDescription: 150–160 characters, include a call to action
 - metaKeywords: 8–12 comma-separated relevant search terms
-- description: optional improved 2–3 sentence product description for the product page (only if current description is empty or very short)
+- description: a captivating, premium 2–3 sentence product description for the store page, highlighting the product's freshness, convenience, and value. Always generate this.
 
 Respond with ONLY a JSON object using exactly these keys: slug, metaTitle, metaDescription, metaKeywords, description`;
 

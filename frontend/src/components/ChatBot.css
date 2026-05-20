@@ -25,17 +25,17 @@
 
 /* ── Floating Trigger Bubble ───────────────────────────────────── */
 .nc-chat-trigger {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
+  position: fixed !important;
+  bottom: 28px !important;
+  right: 28px !important;
   width: 62px;
   height: 62px;
   border-radius: 50%;
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 60%, #15803d 100%);
   border: none;
   cursor: pointer;
-  z-index: var(--nc-bubble-z);
-  display: flex;
+  z-index: 2147483647 !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   box-shadow: 0 8px 32px rgba(34, 197, 94, 0.5), 0 2px 8px rgba(0,0,0,0.4);
@@ -99,9 +99,9 @@
 
 /* ── Chat Panel ────────────────────────────────────────────────── */
 .nc-chat-panel {
-  position: fixed;
-  bottom: 104px;
-  right: 28px;
+  position: fixed !important;
+  bottom: 104px !important;
+  right: 28px !important;
   width: 390px;
   height: 600px;
   max-height: calc(100vh - 120px);
@@ -109,9 +109,9 @@
   border: 1px solid var(--nc-bot-border);
   border-radius: var(--nc-bot-radius);
   box-shadow: var(--nc-bot-shadow);
-  display: flex;
+  display: flex !important;
   flex-direction: column;
-  z-index: var(--nc-bubble-z);
+  z-index: 2147483647 !important;
   overflow: hidden;
   font-family: var(--nc-bot-font);
   transform-origin: bottom right;

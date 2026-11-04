@@ -56,3 +56,23 @@
   .auth-photo { display: none; }
   .auth-form-col { padding-block: var(--space-8) var(--space-16); }
 }
+
+/* Email confirmation notice */
+.auth-verify { display: grid; gap: var(--space-4); justify-items: start; animation: rise var(--dur-slow) var(--ease-out); }
+.auth-verify-icon {
+  width: 56px; height: 56px; border-radius: 18px;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent-text); font-size: 1.4rem;
+}
+.auth-verify h2 { font-size: var(--text-xl); }
+.auth-verify p { color: var(--ink-2); }
+.auth-verify-msg { font-size: var(--text-sm); }
+.auth-verify-msg.is-sent { color: var(--success); }
+.auth-verify-msg.is-error { color: var(--danger); }
+.auth-verify-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.auth-verify.is-compact { padding: var(--space-4); border-radius: var(--r-md); background: var(--warn-soft); margin-bottom: var(--space-4); gap: var(--space-3); }
+.auth-verify.is-compact p { color: var(--warn); font-size: var(--text-sm); }
+.auth-verify.is-compact .btn { --btn-h: 36px; font-size: var(--text-xs); }
+
+.auth-forgot { font-size: var(--text-xs); font-weight: 600; color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.auth-forgot:hover { text-decoration-thickness: 2px; }

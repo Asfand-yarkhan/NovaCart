@@ -6,7 +6,8 @@ import { useCart } from '../context/CartContext';
 import Field from '../components/ui/Field';
 import Seo from '../components/ui/Seo';
 import { pluralize } from '../lib/format';
-import AuthShell, { PasswordInput } from './AuthShell';
+import GoogleButton, { AuthDivider } from '../components/ui/GoogleButton';
+import AuthShell, { PasswordInput, VerifyEmailNotice } from './AuthShell';
 
 const strengthHint = (pw) => {
   if (!pw) return 'At least 6 characters.';
@@ -26,6 +27,7 @@ export default function Signup() {
   const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sentTo, setSentTo] = useState('');
 
   if (user) return <Navigate to={AuthShell.redirectTarget(location.state)} replace />;
 
@@ -44,10 +46,15 @@ export default function Signup() {
     if (first) { document.getElementById(`auth-${first}`)?.focus(); return; }
     setBusy(true);
     try {
-      const profile = await register(form.name.trim(), form.email.trim(), form.password);
-      toast.success(`Welcome to NovaCart, ${profile.name.split(' ')[0]}`);
+      const res = await register(form.name.trim(), form.email.trim(), form.password);
+      if (res.pendingVerification) {
+        setSentTo(res.email);
+        setBusy(false);
+      } else {
+        toast.success(`Welcome to NovaCart, ${res.name.split(' ')[0]}`);
+      }
     } catch (err) {
-      if (err.status === 409) {
+      if (err.status === 409 || err.code === 'auth/email-already-in-use') {
         setErrors({ email: 'An account with this email already exists' });
         document.getElementById('auth-email')?.focus();
       } else {
@@ -56,6 +63,15 @@ export default function Signup() {
       setBusy(false);
     }
   };
+
+  if (sentTo) {
+    return (
+      <AuthShell title="Confirm your email" image="/images/store-aisle.jpg" caption="Over 50 everyday staples, priced like your local market.">
+        <Seo title="Confirm your email" noindex />
+        <VerifyEmailNotice email={sentTo} />
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell
@@ -70,11 +86,13 @@ export default function Signup() {
         <p className="alert alert-info auth-note"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /> The {pluralize(count, 'item')} in your basket will move to your new account.</p>
       )}
       {error && <p className="alert alert-error" role="alert"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" />{error}</p>}
+      <GoogleButton label="Sign up with Google" disabled={busy} onError={setError} onSuccess={p => toast.success(`Welcome to NovaCart, ${p.name.split(" ")[0]}`)} />
+      <AuthDivider />
       <form className="auth-form" onSubmit={submit} noValidate>
         <Field label="Full name" error={errors.name}>
           <input id="auth-name" className="input" value={form.name} onChange={set('name')} autoComplete="name" autoFocus />
         </Field>
-        <Field label="Email" error={errors.email} hint="We send order receipts here">
+        <Field label="Email" error={errors.email} hint="We send a confirmation link here">
           <input id="auth-email" className="input" type="email" inputMode="email" value={form.email} onChange={set('email')} autoComplete="email" />
         </Field>
         <Field label="Password" error={errors.password} hint={strengthHint(form.password)}>

@@ -97,7 +97,50 @@ function AddressForm({ user, onSaved }) {
   );
 }
 
+// Accounts that sign in through Firebase (email link or Google) manage their password there:
+// we email a secure link instead of changing it here.
+function FirebasePasswordPanel({ user }) {
+  const toast = useToast();
+  const [state, setState] = useState('idle');
+  const google = user.signInMethods?.includes('google');
+  const send = async () => {
+    setState('sending');
+    try {
+      const { sendPasswordReset } = await import('../lib/firebase');
+      await sendPasswordReset(user.email);
+      setState('sent');
+      toast.success('Check your inbox', { description: `We sent a password link to ${user.email}.` });
+    } catch (err) {
+      setState('idle');
+      toast.error(err.message);
+    }
+  };
+  return (
+    <div className="acct-form acct-form-narrow">
+      <p className="alert alert-info">
+        <i className={google ? 'fa-brands fa-google' : 'fa-regular fa-envelope'} aria-hidden="true" />
+        {google
+          ? 'You sign in with Google. If you also want to sign in with your email and a password, we will email you a link to set one.'
+          : 'For your security, passwords are changed through a link sent to your email.'}
+      </p>
+      <p className="muted text-sm">The link goes to <strong>{user.email}</strong> and expires after one hour.</p>
+      <div className="acct-form-foot">
+        <button type="button" className="btn btn-primary" onClick={send} disabled={state === 'sending'}>
+          {state === 'sending' && <span className="spinner" aria-hidden="true" />}
+          {state === 'sent' ? 'Send the link again' : google ? 'Email me a link to set a password' : 'Email me a password reset link'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PasswordForm() {
+  const { user } = useAuth();
+  if (user?.usesFirebase && !user?.hasPassword) return <FirebasePasswordPanel user={user} />;
+  return <LocalPasswordForm />;
+}
+
+function LocalPasswordForm() {
   const toast = useToast();
   const empty = { currentPassword: '', newPassword: '', confirm: '' };
   const [form, setForm] = useState(empty);

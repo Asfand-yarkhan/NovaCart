@@ -1,8 +1,11 @@
-import { Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import CartDrawer from './CartDrawer';
+
+// Loaded after the page so it never slows the first paint
+const ChatWidget = lazy(() => import('../assistant/ChatWidget'));
 
 export function RouteLoader() {
   return <div className="route-loader" role="status"><span className="spinner" /><span className="visually-hidden">Loading</span></div>;
@@ -34,6 +37,7 @@ export default function StoreLayout() {
       </main>
       <Footer />
       <CartDrawer />
+      <Suspense fallback={null}><ChatWidget /></Suspense>
     </div>
   );
 }

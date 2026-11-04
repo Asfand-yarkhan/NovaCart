@@ -191,5 +191,25 @@ ok((await req('GET', '/api/products/not-an-id', null, A)).status === 400, 'bad o
 const badJson = await fetch(B + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{bad' });
 ok(badJson.status === 400, 'malformed json 400');
 
+// Shopping assistant
+const ask = (message, token, cart) => req('POST', '/api/assistant', { message, cart }, token);
+let a = await ask('do you have mangoes?');
+ok(a.data.products?.[0]?.slug === 'chaunsa-mangoes' && /Rs 380/.test(a.data.reply), 'assistant: product question');
+a = await ask('cheap fruit under 400');
+ok(a.data.products.length > 0 && a.data.products.every(p => p.category === 'Fruits' && p.price <= 400), 'assistant: category + price filter');
+a = await ask('add 2 dozen anday');
+ok(a.data.actions?.[0]?.type === 'add_to_cart' && a.data.actions[0].quantity === 2 && a.data.products[0].slug === 'desi-eggs', 'assistant: add with Urdu name + quantity');
+a = await ask('is broccoli available');
+ok(/sold out/i.test(a.data.reply), 'assistant: sold-out answer');
+a = await ask("what's in my basket", null, [{ productId: 'x', name: 'Bananas', price: 240, quantity: 2 }]);
+ok(/2 × Bananas/.test(a.data.reply) && /Rs 480/.test(a.data.reply), 'assistant: basket summary');
+a = await ask('track my order');
+ok(a.data.links?.some(l => l.to === '/login'), 'assistant: guests asked to sign in for orders');
+const H = (await req('POST', '/api/auth/login', { email: 'hira.siddiqui@example.pk', password: 'Customer@123' })).data.token;
+a = await ask('where is my order', H);
+ok(Array.isArray(a.data.orders) && a.data.orders.length > 0, 'assistant: tracks signed-in orders');
+a = await ask('do you deliver to karachi');
+ok(/Karachi/.test(a.data.reply) && /Rs 150/.test(a.data.reply), 'assistant: delivery question');
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

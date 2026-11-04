@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useCart } from '../context/CartContext';
 import Field from '../components/ui/Field';
 import Seo from '../components/ui/Seo';
 import { pluralize } from '../lib/format';
-import AuthShell, { PasswordInput } from './AuthShell';
+import GoogleButton, { AuthDivider } from '../components/ui/GoogleButton';
+import AuthShell, { PasswordInput, VerifyEmailNotice } from './AuthShell';
+import { firebaseEnabled, sendPasswordReset } from '../lib/firebase';
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -18,10 +20,30 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [unverified, setUnverified] = useState('');
+  const [reset, setReset] = useState({ status: 'idle', message: '' });
+  const [params] = useSearchParams();
+  const justVerified = params.get('verified') === '1';
 
   if (user) return <Navigate to={AuthShell.redirectTarget(location.state)} replace />;
 
   const set = (k) => (e) => { const v = e.target.value; setForm(f => ({ ...f, [k]: v })); setErrors(er => ({ ...er, [k]: undefined })); };
+
+  const forgot = async () => {
+    const email = form.email.trim();
+    if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) {
+      setErrors({ email: 'Enter your email above, then choose Forgot password' });
+      document.getElementById('auth-email')?.focus();
+      return;
+    }
+    setReset({ status: 'sending', message: '' });
+    try {
+      await sendPasswordReset(email);
+      setReset({ status: 'sent', message: `If ${email} has a NovaCart account, a reset link is on its way. Check spam if it does not arrive in a few minutes.` });
+    } catch (err) {
+      setReset({ status: 'error', message: err.message });
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -30,6 +52,7 @@ export default function Login() {
     if (!form.password) errs.password = 'Enter your password';
     setErrors(errs);
     setError('');
+    setUnverified('');
     const first = Object.keys(errs)[0];
     if (first) { document.getElementById(`auth-${first}`)?.focus(); return; }
     setBusy(true);
@@ -37,7 +60,8 @@ export default function Login() {
       const profile = await login(form.email.trim(), form.password);
       toast.success(`Welcome back, ${profile.name.split(' ')[0]}`);
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'email-not-verified') setUnverified(form.email.trim());
+      else setError(err.message);
       setBusy(false);
     }
   };
@@ -54,12 +78,21 @@ export default function Login() {
       {count > 0 && (
         <p className="alert alert-info auth-note"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /> The {pluralize(count, 'item')} in your basket will be kept when you sign in.</p>
       )}
+      {justVerified && !error && !unverified && (
+        <p className="alert alert-success auth-note"><i className="fa-solid fa-circle-check" aria-hidden="true" /> Your email is confirmed. Sign in to start shopping.</p>
+      )}
+      {unverified && <VerifyEmailNotice email={unverified} compact />}
+      {reset.message && <p className={`alert ${reset.status === 'error' ? 'alert-error' : 'alert-info'} auth-note`} role="status"><i className="fa-solid fa-key" aria-hidden="true" />{reset.message}</p>}
       {error && <p className="alert alert-error" role="alert"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" />{error}</p>}
+      <GoogleButton label="Continue with Google" disabled={busy} onError={setError} onSuccess={p => toast.success(`Welcome back, ${p.name.split(" ")[0]}`)} />
+      <AuthDivider />
       <form className="auth-form" onSubmit={submit} noValidate>
         <Field label="Email" error={errors.email}>
           <input id="auth-email" className="input" type="email" inputMode="email" value={form.email} onChange={set('email')} autoComplete="email" autoFocus />
         </Field>
-        <Field label="Password" error={errors.password}>
+        <Field label="Password" error={errors.password} labelAside={firebaseEnabled && (
+          <button type="button" className="auth-forgot" onClick={forgot} disabled={reset.status === 'sending'}>Forgot password?</button>
+        )}>
           <PasswordInput id="auth-password" value={form.password} onChange={set('password')} show={show} onToggle={() => setShow(s => !s)} autoComplete="current-password" />
         </Field>
         <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy}>

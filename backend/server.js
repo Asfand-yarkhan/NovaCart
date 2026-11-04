@@ -43,6 +43,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/assistant', require('./routes/assistantRoutes'));
 const { contact, newsletter } = require('./routes/contactRoutes');
 app.use('/api/contact', contact);
 app.use('/api/newsletter', newsletter);

@@ -520,3 +520,13 @@
 .section-head p { color: var(--ink-2); margin-top: var(--space-2); max-width: 52ch; }
 .section-head .btn-link { white-space: nowrap; }
 @media (max-width: 640px) { .section { padding-block: var(--space-12); } }
+
+/* ───────────────── Social sign-in ───────────────── */
+.google-btn { gap: var(--space-3); font-weight: 600; }
+.google-btn svg { flex-shrink: 0; }
+.auth-divider {
+  display: flex; align-items: center; gap: var(--space-3);
+  margin-block: var(--space-5);
+  font-size: var(--text-xs); color: var(--ink-3);
+}
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }

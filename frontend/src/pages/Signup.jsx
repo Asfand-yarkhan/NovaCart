@@ -1,71 +1,95 @@
-import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useCart } from '../context/CartContext';
+import Field from '../components/ui/Field';
+import Seo from '../components/ui/Seo';
+import { pluralize } from '../lib/format';
+import AuthShell, { PasswordInput } from './AuthShell';
 
-const Signup = () => {
-    const { register } = useAuth();
-    const navigate = useNavigate();
-    const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        if (form.password !== form.confirm) { setError('Passwords do not match'); return; }
-        if (form.password.length < 6) { setError('Password must be at least 6 characters'); return; }
-        setLoading(true);
-        try {
-            await register(form.name, form.email, form.password);
-            navigate('/');
-        } catch (err) {
-            setError(err.message);
-        } finally { setLoading(false); }
-    };
-
-    const inputStyle = { width: '100%', padding: '12px 15px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' };
-
-    return (
-        <main style={{ minHeight: '100vh', marginTop: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }}>
-            <Helmet>
-                <title>Create Account | NovaCart</title>
-                <meta name="description" content="Create a free NovaCart account to shop fresh groceries online." />
-            </Helmet>
-            <div style={{ width: '100%', maxWidth: '440px', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.1)' }}>
-                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                    <i className="fa-solid fa-leaf" style={{ fontSize: '2.5rem', color: '#059669' }}></i>
-                    <h2 style={{ marginTop: '10px', fontSize: '1.6rem', color: '#1e293b' }}>Create Account</h2>
-                    <p style={{ color: '#64748b', marginTop: '5px' }}>Join NovaCart and shop fresh today</p>
-                </div>
-                {error && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 15px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>{error}</div>}
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Full Name</label>
-                        <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="John Doe" required style={inputStyle} />
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Email Address</label>
-                        <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" required style={inputStyle} />
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Password</label>
-                        <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" required style={inputStyle} />
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Confirm Password</label>
-                        <input type="password" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} placeholder="Repeat password" required style={inputStyle} />
-                    </div>
-                    <button type="submit" disabled={loading} style={{ padding: '14px', background: loading ? '#9ca3af' : 'linear-gradient(135deg, #059669, #10b981)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                    </button>
-                </form>
-                <p style={{ textAlign: 'center', marginTop: '20px', color: '#64748b', fontSize: '0.9rem' }}>
-                    Already have an account? <Link to="/login" style={{ color: '#059669', fontWeight: '700', textDecoration: 'none' }}>Sign in</Link>
-                </p>
-            </div>
-        </main>
-    );
+const strengthHint = (pw) => {
+  if (!pw) return 'At least 6 characters.';
+  if (pw.length < 6) return `${6 - pw.length} more ${6 - pw.length === 1 ? 'character' : 'characters'} to go.`;
+  const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(rx => rx.test(pw)).length;
+  if (pw.length >= 12 || (pw.length >= 8 && variety >= 3)) return 'Strong password.';
+  return 'Good enough. Longer, or a mix of numbers and symbols, is stronger.';
 };
 
-export default Signup;
+export default function Signup() {
+  const { user, register } = useAuth();
+  const { count } = useCart();
+  const toast = useToast();
+  const location = useLocation();
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [show, setShow] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  if (user) return <Navigate to={AuthShell.redirectTarget(location.state)} replace />;
+
+  const set = (k) => (e) => { const v = e.target.value; setForm(f => ({ ...f, [k]: v })); setErrors(er => ({ ...er, [k]: undefined })); };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!form.name.trim()) errs.name = 'Enter your name';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = 'Enter a valid email address';
+    if (form.password.length < 6) errs.password = 'Use at least 6 characters';
+    if (form.confirm !== form.password) errs.confirm = 'Passwords do not match';
+    setErrors(errs);
+    setError('');
+    const first = Object.keys(errs)[0];
+    if (first) { document.getElementById(`auth-${first}`)?.focus(); return; }
+    setBusy(true);
+    try {
+      const profile = await register(form.name.trim(), form.email.trim(), form.password);
+      toast.success(`Welcome to NovaCart, ${profile.name.split(' ')[0]}`);
+    } catch (err) {
+      if (err.status === 409) {
+        setErrors({ email: 'An account with this email already exists' });
+        document.getElementById('auth-email')?.focus();
+      } else {
+        setError(err.message);
+      }
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AuthShell
+      title="Create your account"
+      subtitle="Save addresses, track deliveries and keep a list of favourites."
+      image="/images/store-aisle.jpg"
+      caption="Over 50 everyday staples, priced like your local market."
+      footer={<>Already have an account? <Link to="/login" state={location.state}>Sign in</Link></>}
+    >
+      <Seo title="Create an account" noindex />
+      {count > 0 && (
+        <p className="alert alert-info auth-note"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /> The {pluralize(count, 'item')} in your basket will move to your new account.</p>
+      )}
+      {error && <p className="alert alert-error" role="alert"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" />{error}</p>}
+      <form className="auth-form" onSubmit={submit} noValidate>
+        <Field label="Full name" error={errors.name}>
+          <input id="auth-name" className="input" value={form.name} onChange={set('name')} autoComplete="name" autoFocus />
+        </Field>
+        <Field label="Email" error={errors.email} hint="We send order receipts here">
+          <input id="auth-email" className="input" type="email" inputMode="email" value={form.email} onChange={set('email')} autoComplete="email" />
+        </Field>
+        <Field label="Password" error={errors.password} hint={strengthHint(form.password)}>
+          <PasswordInput id="auth-password" value={form.password} onChange={set('password')} show={show} onToggle={() => setShow(s => !s)} autoComplete="new-password" />
+        </Field>
+        <Field label="Confirm password" error={errors.confirm}>
+          <input id="auth-confirm" className="input" type={show ? 'text' : 'password'} value={form.confirm} onChange={set('confirm')} autoComplete="new-password" />
+        </Field>
+        <p className="auth-terms">
+          By creating an account you agree to our <Link to="/terms">terms</Link> and <Link to="/privacy">privacy policy</Link>.
+        </p>
+        <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy}>
+          {busy ? <><span className="spinner" aria-hidden="true" /> Creating account</> : 'Create account'}
+        </button>
+      </form>
+    </AuthShell>
+  );
+}

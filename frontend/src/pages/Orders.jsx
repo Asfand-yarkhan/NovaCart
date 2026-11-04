@@ -1,65 +1,107 @@
-import React, { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../utils/api';
+import { api } from '../lib/api';
+import { imageUrl } from '../lib/assets';
+import { formatDate, formatPrice, pluralize, shortOrderId, STATUS_LABELS } from '../lib/format';
+import EmptyState, { ErrorState } from '../components/ui/EmptyState';
+import Seo from '../components/ui/Seo';
+import './Orders.css';
 
-const statusColor = { processing: '#f59e0b', confirmed: '#3b82f6', shipped: '#8b5cf6', delivered: '#059669', cancelled: '#ef4444' };
-const statusIcon = { processing: 'fa-clock', confirmed: 'fa-check-circle', shipped: 'fa-truck', delivered: 'fa-box-open', cancelled: 'fa-times-circle' };
+const FILTERS = [
+  { key: 'all', label: 'All', match: () => true },
+  { key: 'active', label: 'Active', match: o => ['processing', 'confirmed', 'shipped'].includes(o.status) },
+  { key: 'delivered', label: 'Delivered', match: o => o.status === 'delivered' },
+  { key: 'cancelled', label: 'Cancelled', match: o => o.status === 'cancelled' }
+];
 
-const Orders = () => {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+function OrderRowSkeleton() {
+  return (
+    <div className="ord-row card" aria-hidden="true">
+      <div className="ord-row-main">
+        <div className="skeleton skeleton-text" style={{ width: 140 }} />
+        <div className="skeleton skeleton-text" style={{ width: 90 }} />
+      </div>
+      <div className="ord-thumbs">
+        {[0, 1, 2].map(i => <div key={i} className="skeleton" style={{ width: 44, height: 44, borderRadius: 10 }} />)}
+      </div>
+      <div className="skeleton skeleton-text" style={{ width: 80 }} />
+    </div>
+  );
+}
 
-    useEffect(() => {
-        api('/orders/mine').then(setOrders).catch(err => setError(err.message)).finally(() => setLoading(false));
-    }, []);
+export default function Orders() {
+  const [orders, setOrders] = useState(null);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState('all');
 
-    if (loading) return <main style={{ minHeight: '60vh', marginTop: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div>Loading orders...</div></main>;
+  const load = useCallback(() => {
+    api('/orders/mine').then(d => { setOrders(d); setError(''); }).catch(err => setError(err.message));
+  }, []);
 
-    return (
-        <main style={{ minHeight: '60vh', marginTop: '80px', background: '#f8fafc', paddingBottom: '60px' }}>
-            <Helmet><title>My Orders | NovaCart</title></Helmet>
-            <div style={{ maxWidth: '850px', margin: '0 auto', padding: '40px 20px' }}>
-                <h1 style={{ fontSize: '2rem', color: '#1e293b', marginBottom: '30px' }}>
-                    <i className="fa-solid fa-bag-shopping" style={{ marginRight: '12px', color: '#059669' }}></i>My Orders
-                </h1>
-                {error && <div style={{ color: '#ef4444', marginBottom: '20px' }}>{error}</div>}
-                {orders.length === 0 ? (
-                    <div style={{ background: '#fff', borderRadius: '16px', padding: '60px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <i className="fa-solid fa-bag-shopping" style={{ fontSize: '4rem', color: '#d1d5db', marginBottom: '20px' }}></i>
-                        <h3 style={{ color: '#374151', marginBottom: '10px' }}>No orders yet</h3>
-                        <p style={{ color: '#64748b', marginBottom: '25px' }}>Start shopping to see your orders here.</p>
-                        <Link to="/shop" style={{ display: 'inline-block', padding: '12px 30px', background: '#059669', color: '#fff', borderRadius: '50px', textDecoration: 'none', fontWeight: '700' }}>Shop Now</Link>
-                    </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {orders.map(order => {
-                            const color = statusColor[order.status] || '#64748b';
-                            const icon = statusIcon[order.status] || 'fa-circle';
-                            return (
-                                <Link key={order._id} to={`/orders/${order._id}`} style={{ textDecoration: 'none' }}>
-                                    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px 25px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'box-shadow 0.2s', cursor: 'pointer', border: '1px solid transparent' }}>
-                                        <div>
-                                            <p style={{ fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>Order #{order._id.slice(-8).toUpperCase()}</p>
-                                            <p style={{ color: '#64748b', fontSize: '0.85rem' }}>{order.items.length} item(s) · {new Date(order.createdAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                            <span style={{ fontWeight: '700', color: '#059669', fontSize: '1.1rem' }}>Rs. {order.total?.toFixed(2)}</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 14px', borderRadius: '20px', background: `${color}15`, color, fontWeight: '600', fontSize: '0.85rem' }}>
-                                                <i className={`fa-solid ${icon}`}></i>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                            </span>
-                                            <i className="fa-solid fa-chevron-right" style={{ color: '#94a3b8' }}></i>
-                                        </div>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-        </main>
-    );
-};
+  useEffect(() => { load(); }, [load]);
 
-export default Orders;
+  const counts = useMemo(() => Object.fromEntries(FILTERS.map(f => [f.key, (orders || []).filter(f.match).length])), [orders]);
+  const visible = (orders || []).filter(FILTERS.find(f => f.key === filter).match);
+
+  return (
+    <div className="container container-narrow page ord-page">
+      <Seo title="Your orders" noindex />
+      <div className="page-head">
+        <div>
+          <h1>Your orders</h1>
+          <p>Track deliveries, reorder favourites and download receipts.</p>
+        </div>
+      </div>
+
+      {error && !orders ? (
+        <ErrorState message={error} onRetry={() => { setError(''); load(); }} />
+      ) : !orders ? (
+        <div className="ord-list" aria-busy="true" aria-label="Loading orders">
+          {[0, 1, 2].map(i => <OrderRowSkeleton key={i} />)}
+        </div>
+      ) : orders.length === 0 ? (
+        <EmptyState icon="fa-receipt" title="No orders yet"
+          actions={<Link to="/shop" className="btn btn-primary">Start shopping</Link>}>
+          When you place an order it shows up here, with live status from our warehouse to your door.
+        </EmptyState>
+      ) : (
+        <>
+          <div className="ord-filters" role="group" aria-label="Filter orders">
+            {FILTERS.map(f => (
+              <button key={f.key} type="button" className="chip" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+                {f.label} <span className="count">{counts[f.key]}</span>
+              </button>
+            ))}
+          </div>
+
+          {visible.length === 0 ? (
+            <p className="ord-none">No {FILTERS.find(f => f.key === filter).label.toLowerCase()} orders right now.</p>
+          ) : (
+            <ul className="ord-list" role="list">
+              {visible.map((o, i) => {
+                const units = o.items.reduce((s, it) => s + it.quantity, 0);
+                return (
+                  <li key={o._id} className="rise" style={{ '--i': Math.min(i, 6) }}>
+                    <Link to={`/orders/${o._id}`} className="ord-row card">
+                      <div className="ord-row-main">
+                        <strong className="num">{shortOrderId(o)}</strong>
+                        <span>{formatDate(o.createdAt)} · {pluralize(units, 'item')}</span>
+                      </div>
+                      <div className="ord-thumbs" aria-hidden="true">
+                        {o.items.slice(0, 4).map((it, k) => <img key={k} src={imageUrl(it.image)} alt="" width="44" height="44" loading="lazy" />)}
+                        {o.items.length > 4 && <span className="ord-more">+{o.items.length - 4}</span>}
+                      </div>
+                      <span className={`status status-${o.status}`}>{STATUS_LABELS[o.status]}</span>
+                      <strong className="ord-row-total num">{formatPrice(o.total)}</strong>
+                      <i className="fa-solid fa-chevron-right ord-row-go" aria-hidden="true" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

@@ -1,83 +1,118 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { api } from '../../lib/api';
+import { initials } from '../../lib/format';
+import Seo from '../ui/Seo';
+import Logo from '../ui/Logo';
+import { Drawer } from '../ui/Dialog';
+import { ThemeSelect } from '../layout/AccountMenu';
+import { RouteLoader } from '../layout/StoreLayout';
+import './admin.css';
 
-const AdminLayout = () => {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+const NAV = [
+  { to: '/admin', label: 'Overview', icon: 'fa-chart-simple', end: true },
+  { to: '/admin/orders', label: 'Orders', icon: 'fa-receipt' },
+  { to: '/admin/products', label: 'Products', icon: 'fa-box' },
+  { to: '/admin/users', label: 'Customers', icon: 'fa-user-group' },
+  { to: '/admin/messages', label: 'Messages', icon: 'fa-inbox', badge: true }
+];
 
-    const handleLogout = () => {
-        logout();
-        navigate('/admin/login');
-    };
-
-    const navItems = [
-        { to: '/admin', label: 'Dashboard', icon: 'fa-chart-line', end: true },
-        { to: '/admin/products', label: 'Products', icon: 'fa-box-open' },
-        { to: '/admin/orders', label: 'Orders', icon: 'fa-cart-arrow-down' },
-        { to: '/admin/users', label: 'Users', icon: 'fa-users' },
-    ];
-
-    return (
-        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
-            <Helmet>
-                <title>Store Admin | NovaCart</title>
-                <meta name="robots" content="noindex, nofollow" />
-            </Helmet>
-
-            {/* Sidebar */}
-            <aside style={{ width: '250px', backgroundColor: '#1e293b', color: '#fff', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-                <div style={{ padding: '20px', fontSize: '1.3rem', fontWeight: '800', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <i className="fa-solid fa-gauge-high" style={{ color: '#38bdf8' }}></i> NovaAdmin
-                </div>
-                <nav style={{ display: 'flex', flexDirection: 'column', padding: '16px 0', flex: 1 }}>
-                    {navItems.map(item => (
-                        <NavLink key={item.to} to={item.to} end={item.end} style={({ isActive }) => ({
-                            padding: '13px 20px', color: isActive ? '#38bdf8' : '#cbd5e1', backgroundColor: isActive ? '#0f172a' : 'transparent',
-                            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem', fontWeight: isActive ? '700' : '400', borderLeft: isActive ? '3px solid #38bdf8' : '3px solid transparent', transition: 'all 0.2s'
-                        })}>
-                            <i className={`fa-solid ${item.icon}`} style={{ width: '16px' }}></i> {item.label}
-                        </NavLink>
-                    ))}
-                </nav>
-                <div style={{ padding: '16px 20px', borderTop: '1px solid #334155' }}>
-                    {user && (
-                        <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #059669, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem', fontWeight: '700' }}>
-                                {user.name?.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <div style={{ color: '#f1f5f9', fontSize: '0.85rem', fontWeight: '600' }}>{user.name}</div>
-                                <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Administrator</div>
-                            </div>
-                        </div>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <NavLink to="/" style={{ color: '#94a3b8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', padding: '6px 0' }}>
-                            <i className="fa-solid fa-store"></i> Back to Store
-                        </NavLink>
-                        <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', padding: '6px 0', textAlign: 'left' }}>
-                            <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <header style={{ height: '60px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', flexShrink: 0 }}>
-                    <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Welcome back, <strong style={{ color: '#1e293b' }}>{user?.name}</strong></span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <i className="fa-regular fa-bell" style={{ fontSize: '1.1rem', color: '#64748b', cursor: 'pointer' }}></i>
-                    </div>
-                </header>
-                <main style={{ padding: '28px', flex: 1, overflowY: 'auto' }}>
-                    <Outlet />
-                </main>
-            </div>
+function SideContent({ unread, onSignOut }) {
+  const { user } = useAuth();
+  return (
+    <>
+      <nav className="adm-nav" aria-label="Admin">
+        {NAV.map(item => (
+          <NavLink key={item.to} to={item.to} end={item.end}>
+            <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+            {item.label}
+            {item.badge && unread > 0 && <span className="adm-count" aria-label={`${unread} unread`}>{unread}</span>}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="adm-side-foot">
+        <div className="adm-user">
+          <span className="avatar" aria-hidden="true">{initials(user?.name)}</span>
+          <div>
+            <strong>{user?.name}</strong>
+            <span>Store admin</span>
+          </div>
         </div>
-    );
-};
+        <ThemeSelect />
+        <div className="adm-side-links">
+          <Link to="/"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />View store</Link>
+          <button type="button" onClick={onSignOut}><i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" />Sign out</button>
+        </div>
+      </div>
+    </>
+  );
+}
 
-export default AdminLayout;
+export default function AdminLayout() {
+  const { logout } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [unread, setUnread] = useState(0);
+  // The mobile menu remembers which page it was opened on, so navigating closes it
+  const [menuFor, setMenuFor] = useState(null);
+  const menuOpen = menuFor === location.pathname;
+  const setMenuOpen = (open) => setMenuFor(open ? location.pathname : null);
+
+  const refreshUnread = useCallback(() => {
+    api('/contact').then(list => setUnread(list.filter(m => !m.read).length)).catch(() => {});
+  }, []);
+
+  useEffect(() => { refreshUnread(); }, [refreshUnread]);
+
+  const signOut = () => {
+    logout();
+    toast('You are signed out');
+    navigate('/admin/login');
+  };
+
+  return (
+    <div className="adm">
+      <Seo title="Store admin" noindex />
+      <a href="#adm-main" className="skip-link">Skip to content</a>
+
+      <aside className="adm-side">
+        <div className="adm-brand">
+          <Logo to="/admin" label="NovaCart admin home" />
+          <span className="adm-brand-tag">Admin</span>
+        </div>
+        <SideContent unread={unread} onSignOut={signOut} />
+      </aside>
+
+      <div className="adm-topbar">
+        <button type="button" className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Open admin menu">
+          <i className="fa-solid fa-bars" aria-hidden="true" />
+        </button>
+        <Logo to="/admin" label="NovaCart admin home" />
+        <span className="adm-brand-tag">Admin</span>
+        {unread > 0 && (
+          <Link to="/admin/messages" className="icon-btn adm-count-dot" aria-label={`${unread} unread messages`}>
+            <i className="fa-solid fa-inbox" aria-hidden="true" />
+            <span className="dot-count">{unread}</span>
+          </Link>
+        )}
+      </div>
+
+      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} side="left" title="Admin" labelId="adm-menu-title">
+        <div className="adm-drawer-nav">
+          <SideContent unread={unread} onSignOut={signOut} />
+        </div>
+      </Drawer>
+
+      <main id="adm-main" className="adm-main" tabIndex={-1}>
+        <div className="adm-inner">
+          <Suspense fallback={<RouteLoader />}>
+            <Outlet context={{ refreshUnread, setUnread }} />
+          </Suspense>
+        </div>
+      </main>
+    </div>
+  );
+}

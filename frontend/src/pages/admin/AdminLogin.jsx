@@ -1,74 +1,87 @@
-import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Seo from '../../components/ui/Seo';
+import Logo from '../../components/ui/Logo';
+import Field from '../../components/ui/Field';
+import { RouteLoader } from '../../components/layout/StoreLayout';
+import '../../components/admin/admin.css';
 
-const AdminLogin = () => {
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const [form, setForm] = useState({ email: '', password: '' });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+export default function AdminLogin() {
+  const { user, isAdmin, loading, login, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState('');
+  const [fields, setFields] = useState({});
+  const [busy, setBusy] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError(''); setLoading(true);
-        try {
-            const data = await login(form.email, form.password);
-            if (data.role !== 'admin') {
-                setError('Access denied. Admin account required.');
-                return;
-            }
-            navigate('/admin');
-        } catch (err) {
-            setError(err.message);
-        } finally { setLoading(false); }
-    };
+  const from = location.state?.from?.pathname?.startsWith('/admin') ? location.state.from.pathname + (location.state.from.search || '') : '/admin';
 
-    return (
-        <div style={{ minHeight: '100vh', display: 'flex', background: '#0f172a' }}>
-            <Helmet>
-                <title>Admin Sign In | NovaCart</title>
-                <meta name="robots" content="noindex, nofollow" />
-            </Helmet>
+  if (loading) return <RouteLoader />;
+  if (user && isAdmin) return <Navigate to={from} replace />;
 
-            {/* Left Panel */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #059669, #0d9488)', padding: '40px' }}>
-                <div style={{ textAlign: 'center', color: '#fff' }}>
-                    <i className="fa-solid fa-gauge-high" style={{ fontSize: '4rem', marginBottom: '20px', opacity: 0.9 }}></i>
-                    <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '10px' }}>NovaAdmin</h2>
-                    <p style={{ opacity: 0.8, fontSize: '1.05rem' }}>Manage your store from one place</p>
-                </div>
-            </div>
+  const submit = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = 'Enter a valid email address';
+    if (!form.password) errs.password = 'Enter your password';
+    setFields(errs);
+    if (Object.keys(errs).length) return;
 
-            {/* Right Form Panel */}
-            <div style={{ width: '420px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                <div style={{ width: '100%' }}>
-                    <h2 style={{ color: '#f1f5f9', fontSize: '1.7rem', fontWeight: '700', marginBottom: '8px' }}>Admin Sign In</h2>
-                    <p style={{ color: '#64748b', marginBottom: '30px' }}>Enter your admin credentials to continue</p>
+    setBusy(true); setError('');
+    try {
+      const profile = await login(form.email.trim(), form.password);
+      if (profile.role !== 'admin') {
+        logout();
+        setError('This account does not have admin access.');
+        return;
+      }
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
-                    {error && <div style={{ background: '#3f1212', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px 14px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>{error}</div>}
+  const set = (k) => (e) => { setForm(f => ({ ...f, [k]: e.target.value })); setFields(f => ({ ...f, [k]: undefined })); };
 
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                        <div>
-                            <label style={{ display: 'block', color: '#94a3b8', fontWeight: '600', marginBottom: '6px', fontSize: '0.85rem' }}>Email Address</label>
-                            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="admin@novacart.com" required
-                                style={{ width: '100%', padding: '12px 14px', background: '#1e293b', border: '1.5px solid #334155', borderRadius: '10px', color: '#f1f5f9', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', color: '#94a3b8', fontWeight: '600', marginBottom: '6px', fontSize: '0.85rem' }}>Password</label>
-                            <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" required
-                                style={{ width: '100%', padding: '12px 14px', background: '#1e293b', border: '1.5px solid #334155', borderRadius: '10px', color: '#f1f5f9', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
-                        </div>
-                        <button type="submit" disabled={loading} style={{ padding: '13px', background: loading ? '#475569' : 'linear-gradient(135deg, #059669, #10b981)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '6px' }}>
-                            {loading ? 'Signing In...' : 'Sign In to Dashboard'}
-                        </button>
-                    </form>
-                    <a href="/" style={{ display: 'block', textAlign: 'center', marginTop: '20px', color: '#475569', fontSize: '0.85rem', textDecoration: 'none' }}>← Back to Store</a>
-                </div>
-            </div>
-        </div>
-    );
-};
+  return (
+    <main className="adm-login">
+      <Seo title="Admin sign in" noindex />
+      <div className="card adm-login-card">
+        <Logo />
+        <h1>Sign in to the store admin</h1>
+        <p>Manage products, orders and customers.</p>
 
-export default AdminLogin;
+        {error && (
+          <div className="alert alert-error" role="alert">
+            <i className="fa-solid fa-circle-exclamation" aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form className="adm-login-form" onSubmit={submit} noValidate>
+          <Field label="Email" error={fields.email}>
+            <input className="input" type="email" autoComplete="username" value={form.email} onChange={set('email')} autoFocus />
+          </Field>
+          <Field label="Password" error={fields.password}
+            labelAside={<button type="button" className="btn-link text-xs" onClick={() => setShowPw(s => !s)}>{showPw ? 'Hide' : 'Show'}</button>}>
+            <input className="input" type={showPw ? 'text' : 'password'} autoComplete="current-password" value={form.password} onChange={set('password')} />
+          </Field>
+          <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy}>
+            {busy && <span className="spinner" aria-hidden="true" />}
+            {busy ? 'Signing in' : 'Sign in'}
+          </button>
+        </form>
+
+        <p className="adm-demo">
+          Demo account from the seed data: <code>admin@novacart.pk</code> / <code>Admin@123</code>
+        </p>
+        <p className="adm-login-foot"><Link to="/">Back to the store</Link></p>
+      </div>
+    </main>
+  );
+}

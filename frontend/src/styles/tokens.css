@@ -1,0 +1,229 @@
+/*
+  NovaCart design tokens.
+  One accent (leaf green), warm neutrals, tomato only for sale/discount.
+  Light is default; dark follows the OS unless the user picks a theme
+  (ThemeContext sets [data-theme] on <html>).
+*/
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --paper: #f7f4ee;
+  --surface: #fffdf9;
+  --surface-2: #f1ede4;
+  --surface-3: #e9e3d7;
+  --overlay: rgb(28 30 26 / 0.44);
+
+  /* Ink */
+  --ink: #1f2420;
+  --ink-2: #474e48;
+  --ink-3: #69706a;
+  --ink-inverse: #fbfaf6;
+
+  /* Lines */
+  --line: #e4ded2;
+  --line-strong: #cec6b6;
+
+  /* Accent: leaf green */
+  --accent: #2f6b3f;
+  --accent-hover: #275a35;
+  --accent-press: #214c2d;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3ede1;
+  --accent-soft-2: #cfe0cc;
+  --accent-text: #2a6139;
+
+  /* Semantic */
+  --sale: #b0442a;
+  --sale-soft: #f8e5dd;
+  --warn: #8a5d0c;
+  --warn-soft: #f5ead2;
+  --danger: #b3261e;
+  --danger-soft: #f9e2df;
+  --info: #2c5a83;
+  --info-soft: #e1eaf3;
+  --success: var(--accent-text);
+  --success-soft: var(--accent-soft);
+
+  /* Status colours for orders */
+  --st-processing: #8a5d0c;
+  --st-processing-bg: #f5ead2;
+  --st-confirmed: #2c5a83;
+  --st-confirmed-bg: #e1eaf3;
+  --st-shipped: #6a4c93;
+  --st-shipped-bg: #ece5f4;
+  --st-delivered: #2a6139;
+  --st-delivered-bg: #e3ede1;
+  --st-cancelled: #9b2c24;
+  --st-cancelled-bg: #f6e0dd;
+
+  /* Fixed colours that do not change with theme */
+  --star: #d39a1b;
+  --on-photo: #fbfaf6;
+  --photo-scrim: rgb(18 20 16 / 0.62);
+  --announce-bg: #1f2420;
+  --announce-ink: #f1efe8;
+
+  /* Charts */
+  --chart-1: #2f6b3f;
+  --chart-1-soft: rgb(47 107 63 / 0.14);
+  --chart-grid: #e7e1d6;
+
+  /* Typography */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: clamp(1.875rem, 1.4rem + 1.6vw, 2.5rem);
+  --text-3xl: clamp(2.375rem, 1.6rem + 3.2vw, 4.25rem);
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Radius */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Shadows (warm-tinted, single light source from above) */
+  --shadow-1: 0 1px 2px rgb(64 52 30 / 0.06), 0 1px 1px rgb(64 52 30 / 0.04);
+  --shadow-2: 0 2px 4px rgb(64 52 30 / 0.04), 0 10px 24px -8px rgb(64 48 20 / 0.14);
+  --shadow-3: 0 4px 8px rgb(50 40 20 / 0.05), 0 28px 56px -20px rgb(40 30 10 / 0.28);
+  --ring: 0 0 0 3px rgb(47 107 63 / 0.28);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 420ms;
+
+  /* Layout */
+  --container: 1280px;
+  --gutter: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+  --header-h: 72px;
+
+  /* Z-index scale */
+  --z-sticky: 20;
+  --z-dropdown: 30;
+  --z-drawer: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #131613;
+    --surface: #1a1e1a;
+    --surface-2: #222722;
+    --surface-3: #2a302a;
+    --overlay: rgb(0 0 0 / 0.6);
+    --ink: #ecebe4;
+    --ink-2: #c0c3ba;
+    --ink-3: #959b92;
+    --ink-inverse: #131613;
+    --line: #2c322c;
+    --line-strong: #3b433b;
+    --accent: #79b585;
+    --accent-hover: #8cc497;
+    --accent-press: #6aa676;
+    --accent-ink: #0d1a10;
+    --accent-soft: #1f3123;
+    --accent-soft-2: #2a422f;
+    --accent-text: #93c99d;
+    --sale: #ee9478;
+    --sale-soft: #3a231d;
+    --warn: #e2b866;
+    --warn-soft: #362b17;
+    --danger: #f08b82;
+    --danger-soft: #3b1f1c;
+    --info: #8db7de;
+    --info-soft: #1b2a38;
+    --st-processing: #e2b866;
+    --st-processing-bg: #362b17;
+    --st-confirmed: #8db7de;
+    --st-confirmed-bg: #1b2a38;
+    --st-shipped: #c1a6e6;
+    --st-shipped-bg: #2b2238;
+    --st-delivered: #93c99d;
+    --st-delivered-bg: #1f3123;
+    --st-cancelled: #f08b82;
+    --st-cancelled-bg: #3b1f1c;
+    --chart-1: #79b585;
+    --chart-1-soft: rgb(121 181 133 / 0.16);
+    --chart-grid: #2c322c;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.55);
+    --shadow-3: 0 28px 56px -20px rgb(0 0 0 / 0.7);
+    --ring: 0 0 0 3px rgb(121 181 133 / 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #131613;
+  --surface: #1a1e1a;
+  --surface-2: #222722;
+  --surface-3: #2a302a;
+  --overlay: rgb(0 0 0 / 0.6);
+  --ink: #ecebe4;
+  --ink-2: #c0c3ba;
+  --ink-3: #959b92;
+  --ink-inverse: #131613;
+  --line: #2c322c;
+  --line-strong: #3b433b;
+  --accent: #79b585;
+  --accent-hover: #8cc497;
+  --accent-press: #6aa676;
+  --accent-ink: #0d1a10;
+  --accent-soft: #1f3123;
+  --accent-soft-2: #2a422f;
+  --accent-text: #93c99d;
+  --sale: #ee9478;
+  --sale-soft: #3a231d;
+  --warn: #e2b866;
+  --warn-soft: #362b17;
+  --danger: #f08b82;
+  --danger-soft: #3b1f1c;
+  --info: #8db7de;
+  --info-soft: #1b2a38;
+  --st-processing: #e2b866;
+  --st-processing-bg: #362b17;
+  --st-confirmed: #8db7de;
+  --st-confirmed-bg: #1b2a38;
+  --st-shipped: #c1a6e6;
+  --st-shipped-bg: #2b2238;
+  --st-delivered: #93c99d;
+  --st-delivered-bg: #1f3123;
+  --st-cancelled: #f08b82;
+  --st-cancelled-bg: #3b1f1c;
+  --chart-1: #79b585;
+  --chart-1-soft: rgb(121 181 133 / 0.16);
+  --chart-grid: #2c322c;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.55);
+  --shadow-3: 0 28px 56px -20px rgb(0 0 0 / 0.7);
+  --ring: 0 0 0 3px rgb(121 181 133 / 0.35);
+}

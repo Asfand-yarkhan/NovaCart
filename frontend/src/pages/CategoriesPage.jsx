@@ -1,42 +1,59 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../lib/api';
+import { formatPrice, pluralize } from '../lib/format';
+import { CATEGORIES } from '../lib/store';
+import Seo from '../components/ui/Seo';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import './Shop.css';
 
-const CategoriesPage = () => {
-    const categories = [
-        { id: 1, name: 'Fresh Fruits', icon: 'fa-apple-whole', color: '#ffedd5', iconColor: '#ea580c' },
-        { id: 2, name: 'Vegetables', icon: 'fa-carrot', color: '#ecfccb', iconColor: '#65a30d' },
-        { id: 3, name: 'Dairy & Milk', icon: 'fa-cheese', color: '#fffedd', iconColor: '#eab308' },
-        { id: 4, name: 'Meat & Fish', icon: 'fa-drumstick-bite', color: '#fee2e2', iconColor: '#dc2626' },
-        { id: 5, name: 'Bakery', icon: 'fa-bread-slice', color: '#ffedd5', iconColor: '#d97706' },
-        { id: 6, name: 'Beverages', icon: 'fa-wine-bottle', color: '#e0f2fe', iconColor: '#0284c7' },
-        { id: 7, name: 'Snacks', icon: 'fa-cookie', color: '#fef3c7', iconColor: '#d97706' },
-        { id: 8, name: 'Household', icon: 'fa-soap', color: '#dcfce7', iconColor: '#15803d' },
-    ];
+export default function CategoriesPage() {
+  const [stats, setStats] = useState(null);
 
-    return (
-        <main className="categories section-padding" style={{ minHeight: '60vh', marginTop: '80px' }}>
-            <Helmet>
-                <title>Browse Categories | NovaCart</title>
-                <meta name="description" content="Explore a wide variety of grocery categories at NovaCart including fresh fruits, vegetables, dairy, bakery items, household goods, and more." />
-                <meta name="keywords" content="grocery categories, fresh fruits, vegetables, dairy products, bakery, household goods" />
-            </Helmet>
-            <div className="container">
-                <div className="section-header">
-                    <h2>All Categories</h2>
+  useEffect(() => {
+    api('/products/categories').then(setStats).catch(() => setStats([]));
+  }, []);
+
+  // Known categories first (with photos), then any new ones an admin created
+  const byName = new Map((stats || []).map(s => [s.name, s]));
+  const extra = (stats || []).filter(s => !CATEGORIES.some(c => c.name === s.name))
+    .map(s => ({ name: s.name, slug: s.slug, image: '', blurb: '' }));
+  const tiles = [...CATEGORIES, ...extra];
+
+  return (
+    <div className="container page">
+      <Seo title="Shop by category" description="Fruit, vegetables, dairy and eggs, halal meat and seafood, bakery, pantry staples, beverages and snacks. Same-day delivery from NovaCart." />
+      <Breadcrumbs items={[{ label: 'Categories' }]} />
+      <header className="page-head" style={{ marginTop: 'var(--space-5)' }}>
+        <div>
+          <h1>Shop by category</h1>
+          <p>Eight aisles, restocked every morning. Pick one to see what is in today.</p>
+        </div>
+        <Link to="/shop" className="btn btn-secondary">Browse all products</Link>
+      </header>
+
+      <ul className="cat-page-grid" role="list">
+        {tiles.map((c, i) => {
+          const s = byName.get(c.name);
+          return (
+            <li key={c.slug} className="rise" style={{ '--i': Math.min(i, 6) }}>
+              <Link to={`/shop?category=${encodeURIComponent(c.name)}`} className="cat-page-tile">
+                {c.image && <img src={c.image} alt="" loading={i < 3 ? 'eager' : 'lazy'} width="700" height="840" />}
+                <span className="cat-page-arrow" aria-hidden="true"><i className="fa-solid fa-arrow-right" /></span>
+                <h2>{c.name}</h2>
+                {c.blurb && <p>{c.blurb}</p>}
+                <div className="cat-page-meta">
+                  {stats === null
+                    ? <span>Checking stock</span>
+                    : s
+                      ? <><span>{pluralize(s.count, 'product')}</span><span>From {formatPrice(s.minPrice)}</span></>
+                      : <span>Restocking soon</span>}
                 </div>
-                <div className="categories-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '20px' }}>
-                    {categories.map((cat, index) => (
-                        <div className="category-card" key={cat.id} style={{ textAlign: 'center', padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                            <div className="category-icon-wrapper" style={{ backgroundColor: cat.color, color: cat.iconColor, width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', fontSize: '1.5rem' }}>
-                                <i className={`fa-solid ${cat.icon}`}></i>
-                            </div>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '5px' }}>{cat.name}</h3>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </main>
-    );
-};
-
-export default CategoriesPage;
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}

@@ -1,0 +1,10 @@
+{
+  "name": "NovaCart",
+  "short_name": "NovaCart",
+  "description": "Fresh groceries delivered the same day in Pakistan.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4ee",
+  "theme_color": "#2f6b3f",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

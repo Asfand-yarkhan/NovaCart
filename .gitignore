@@ -1,7 +1,10 @@
 node_modules/
 .env
 *.env
-uploads/
+!.env.example
+backend/uploads/
 dist/
 .DS_Store
+Thumbs.db
+*.log
 test_auth.js

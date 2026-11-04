@@ -1,13 +1,12 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { RouteLoader } from './layout/StoreLayout';
 
-const AdminRoute = ({ children }) => {
-    const { user, loading } = useAuth();
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>;
-    if (!user) return <Navigate to="/admin/login" replace />;
-    if (user.role !== 'admin') return <Navigate to="/" replace />;
-    return children;
-};
-
-export default AdminRoute;
+export default function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth();
+  const location = useLocation();
+  if (loading) return <RouteLoader />;
+  if (!user) return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return children;
+}

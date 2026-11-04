@@ -1,60 +1,71 @@
-import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useCart } from '../context/CartContext';
+import Field from '../components/ui/Field';
+import Seo from '../components/ui/Seo';
+import { pluralize } from '../lib/format';
+import AuthShell, { PasswordInput } from './AuthShell';
 
-const Login = () => {
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const from = location.state?.from?.pathname || '/';
-    const [form, setForm] = useState({ email: '', password: '' });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+export default function Login() {
+  const { user, login } = useAuth();
+  const { count } = useCart();
+  const toast = useToast();
+  const location = useLocation();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [show, setShow] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError(''); setLoading(true);
-        try {
-            await login(form.email, form.password);
-            navigate(from, { replace: true });
-        } catch (err) {
-            setError(err.message);
-        } finally { setLoading(false); }
-    };
+  if (user) return <Navigate to={AuthShell.redirectTarget(location.state)} replace />;
 
-    return (
-        <main style={{ minHeight: '100vh', marginTop: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }}>
-            <Helmet>
-                <title>Login | NovaCart</title>
-                <meta name="description" content="Log in to your NovaCart account." />
-            </Helmet>
-            <div style={{ width: '100%', maxWidth: '420px', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.1)' }}>
-                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                    <i className="fa-solid fa-leaf" style={{ fontSize: '2.5rem', color: '#059669' }}></i>
-                    <h2 style={{ marginTop: '10px', fontSize: '1.6rem', color: '#1e293b' }}>Welcome Back</h2>
-                    <p style={{ color: '#64748b', marginTop: '5px' }}>Sign in to your NovaCart account</p>
-                </div>
-                {error && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 15px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>{error}</div>}
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Email Address</label>
-                        <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" required style={{ width: '100%', padding: '12px 15px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }} onFocus={e => e.target.style.borderColor = '#059669'} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Password</label>
-                        <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" required style={{ width: '100%', padding: '12px 15px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }} onFocus={e => e.target.style.borderColor = '#059669'} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
-                    </div>
-                    <button type="submit" disabled={loading} style={{ padding: '14px', background: loading ? '#9ca3af' : 'linear-gradient(135deg, #059669, #10b981)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}>
-                        {loading ? 'Signing in...' : 'Sign In'}
-                    </button>
-                </form>
-                <p style={{ textAlign: 'center', marginTop: '20px', color: '#64748b', fontSize: '0.9rem' }}>
-                    Don't have an account? <Link to="/signup" style={{ color: '#059669', fontWeight: '700', textDecoration: 'none' }}>Create one free</Link>
-                </p>
-            </div>
-        </main>
-    );
-};
+  const set = (k) => (e) => { const v = e.target.value; setForm(f => ({ ...f, [k]: v })); setErrors(er => ({ ...er, [k]: undefined })); };
 
-export default Login;
+  const submit = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = 'Enter the email you signed up with';
+    if (!form.password) errs.password = 'Enter your password';
+    setErrors(errs);
+    setError('');
+    const first = Object.keys(errs)[0];
+    if (first) { document.getElementById(`auth-${first}`)?.focus(); return; }
+    setBusy(true);
+    try {
+      const profile = await login(form.email.trim(), form.password);
+      toast.success(`Welcome back, ${profile.name.split(' ')[0]}`);
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AuthShell
+      title="Sign in"
+      subtitle="Track orders, reorder favourites and check out faster."
+      image="/images/veg-shelves.jpg"
+      caption="Bought fresh every morning, at your door the same day."
+      footer={<>New to NovaCart? <Link to="/signup" state={location.state}>Create an account</Link></>}
+    >
+      <Seo title="Sign in" noindex />
+      {count > 0 && (
+        <p className="alert alert-info auth-note"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /> The {pluralize(count, 'item')} in your basket will be kept when you sign in.</p>
+      )}
+      {error && <p className="alert alert-error" role="alert"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" />{error}</p>}
+      <form className="auth-form" onSubmit={submit} noValidate>
+        <Field label="Email" error={errors.email}>
+          <input id="auth-email" className="input" type="email" inputMode="email" value={form.email} onChange={set('email')} autoComplete="email" autoFocus />
+        </Field>
+        <Field label="Password" error={errors.password}>
+          <PasswordInput id="auth-password" value={form.password} onChange={set('password')} show={show} onToggle={() => setShow(s => !s)} autoComplete="current-password" />
+        </Field>
+        <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy}>
+          {busy ? <><span className="spinner" aria-hidden="true" /> Signing in</> : 'Sign in'}
+        </button>
+      </form>
+    </AuthShell>
+  );
+}

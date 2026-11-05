@@ -5,4 +5,4 @@ Disallow: /checkout
 Disallow: /account
 Disallow: /orders
 
-Sitemap: http://localhost:5173/sitemap.xml
+Sitemap: https://nova-cart-inky.vercel.app/sitemap.xml

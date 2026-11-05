@@ -24,14 +24,13 @@ Vite proxies `/api`, `/uploads` and `/sitemap.xml` to the API, so no CORS setup 
 
 To check the API end to end (81 checks covering auth, pricing, stock, orders, reviews, admin access and the shopping assistant), run `npm run test:api` in `backend/` while the server is running against a freshly seeded database.
 
-### Demo accounts (created by `npm run seed`)
+### Accounts
 
-| Role     | Email                        | Password       |
-|----------|------------------------------|----------------|
-| Admin    | `admin@novacart.pk`          | `Admin@123`    |
-| Customer | `hira.siddiqui@example.pk`   | `Customer@123` |
+`npm run seed` creates an admin from `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `backend/.env`, plus demo customers. It prints the sign-in details when it finishes.
 
 Admin sign-in lives at `/admin/login`. To promote any other account: `npm run make-admin -- someone@example.com`.
+
+**Do not run `npm run seed` against a live database.** It deletes all products, users and orders, and resets the admin password to the value in `.env`.
 
 ### Sign-in with Firebase (email confirmation and Google)
 

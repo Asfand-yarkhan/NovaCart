@@ -370,8 +370,6 @@
 .adm-login-card h1 { font-size: var(--text-xl); }
 .adm-login-card > p { color: var(--ink-3); font-size: var(--text-sm); margin-top: calc(var(--space-3) * -1); }
 .adm-login-form { display: grid; gap: var(--space-4); }
-.adm-demo { font-size: var(--text-xs); color: var(--ink-3); padding: var(--space-3); border-radius: var(--r-sm); background: var(--surface-2); }
-.adm-demo code { font-family: var(--font-mono); color: var(--ink-2); }
 .adm-login-foot { font-size: var(--text-sm); color: var(--ink-3); text-align: center; }
 .adm-login-foot a { color: var(--accent-text); font-weight: 600; }
 @media (max-width: 420px) { .adm-login-card { padding: var(--space-6); } }

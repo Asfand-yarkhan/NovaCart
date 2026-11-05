@@ -80,9 +80,6 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <p className="adm-demo">
-          Demo account from the seed data: <code>admin@novacart.pk</code> / <code>Admin@123</code>
-        </p>
         <p className="adm-login-foot"><Link to="/">Back to the store</Link></p>
       </div>
     </main>

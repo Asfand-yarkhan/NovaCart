@@ -31,6 +31,7 @@ const AdminProducts = lazy(() => import('./pages/admin/Products'));
 const AdminOrders = lazy(() => import('./pages/admin/Orders'));
 const AdminUsers = lazy(() => import('./pages/admin/Users'));
 const AdminMessages = lazy(() => import('./pages/admin/Messages'));
+const AdminAccount = lazy(() => import('./pages/admin/Account'));
 
 const guard = (el) => <ProtectedRoute>{el}</ProtectedRoute>;
 
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="messages" element={<AdminMessages />} />
+          <Route path="account" element={<AdminAccount />} />
           <Route path="*" element={<NotFound admin />} />
         </Route>
       </Routes>

@@ -1,0 +1,11 @@
+/* Shared by the store account page and the admin account page */
+.acct-panel-title { font-size: var(--text-lg); }
+.acct-panel-sub { color: var(--ink-3); font-size: var(--text-sm); margin: 4px 0 var(--space-6); }
+.acct-form { display: grid; gap: var(--space-4); }
+.acct-form-narrow { max-width: 420px; }
+.acct-form-foot { display: flex; justify-content: flex-end; padding-top: var(--space-2); }
+.acct-form-narrow .acct-form-foot { justify-content: flex-start; }
+
+@media (max-width: 760px) {
+  .acct-form-foot .btn { width: 100%; }
+}

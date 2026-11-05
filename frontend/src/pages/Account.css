@@ -36,13 +36,6 @@
 .acct-signout { margin-top: var(--space-4); border-top: 1px solid var(--line); border-radius: 0 0 var(--r-sm) var(--r-sm); padding-top: var(--space-4); }
 .acct-signout:hover { color: var(--danger); }
 
-.acct-panel-title { font-size: var(--text-lg); }
-.acct-panel-sub { color: var(--ink-3); font-size: var(--text-sm); margin: 4px 0 var(--space-6); }
-.acct-form { display: grid; gap: var(--space-4); }
-.acct-form-narrow { max-width: 420px; }
-.acct-form-foot { display: flex; justify-content: flex-end; padding-top: var(--space-2); }
-.acct-form-narrow .acct-form-foot { justify-content: flex-start; }
-
 @media (max-width: 760px) {
   .acct-layout { grid-template-columns: 1fr; gap: var(--space-4); }
   .acct-tabs {
@@ -55,5 +48,4 @@
   .acct-tabs [role="tab"][aria-selected="true"] { background: var(--ink); color: var(--ink-inverse); box-shadow: none; }
   .acct-tabs [role="tab"][aria-selected="true"] i { color: inherit; }
   .acct-signout { margin: 0 0 0 auto; border: 0; padding: 8px 14px; white-space: nowrap; }
-  .acct-form-foot .btn { width: 100%; }
 }

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/ui/Seo';
 import Logo from '../../components/ui/Logo';
 import Field from '../../components/ui/Field';
+import GoogleButton, { AuthDivider } from '../../components/ui/GoogleButton';
 import { RouteLoader } from '../../components/layout/StoreLayout';
 import '../../components/admin/admin.css';
 
@@ -63,6 +64,8 @@ export default function AdminLogin() {
           </div>
         )}
 
+        <GoogleButton disabled={busy} onError={setError} onSuccess={p => { if (p.role !== 'admin') { logout(); setError('This Google account does not have admin access.'); } }} />
+        <AuthDivider />
         <form className="adm-login-form" onSubmit={submit} noValidate>
           <Field label="Email" error={fields.email}>
             <input className="input" type="email" autoComplete="username" value={form.email} onChange={set('email')} autoFocus />

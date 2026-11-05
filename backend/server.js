@@ -22,6 +22,9 @@ const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 app.disable('x-powered-by');
+// Hosts like Render sit behind a proxy; without this, req.ip is the proxy and the
+// failed-login limiter would treat every visitor as one person.
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 app.use(cors({
     origin: (origin, cb) => {
         const allowed = CLIENT_URL.split(',').map(s => s.trim());
@@ -43,6 +46,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/assistant', require('./routes/assistantRoutes'));
 const { contact, newsletter } = require('./routes/contactRoutes');
 app.use('/api/contact', contact);
 app.use('/api/newsletter', newsletter);

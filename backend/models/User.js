@@ -12,7 +12,15 @@ const userSchema = new mongoose.Schema({
         type: String, required: [true, 'Email is required'], unique: true, lowercase: true, trim: true,
         match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Enter a valid email address']
     },
-    password: { type: String, required: true, minlength: [6, 'Password must be at least 6 characters'] },
+    // Accounts created with Google sign-in have no password until the user sets one
+    password: {
+        type: String,
+        required: [function () { return !this.firebaseUid; }, 'Password is required'],
+        minlength: [6, 'Password must be at least 6 characters']
+    },
+    firebaseUid: { type: String, unique: true, sparse: true },
+    firebaseProviders: [{ type: String }], // 'google', 'email'
+    avatar: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     phone: { type: String, trim: true, default: '' },
     cart: [cartItemSchema],
@@ -35,7 +43,8 @@ userSchema.pre('save', async function () {
 });
 
 userSchema.methods.matchPassword = function (enteredPassword) {
-    return bcrypt.compare(enteredPassword, this.password);
+    if (!this.password || !enteredPassword) return Promise.resolve(false);
+    return bcrypt.compare(String(enteredPassword), this.password);
 };
 
 userSchema.methods.toPublic = function () {
@@ -46,6 +55,10 @@ userSchema.methods.toPublic = function () {
         role: this.role,
         phone: this.phone,
         address: this.address,
+        avatar: this.avatar,
+        hasPassword: Boolean(this.password),
+        usesFirebase: Boolean(this.firebaseUid),
+        signInMethods: [...new Set([...(this.firebaseProviders || []), this.password && 'password'].filter(Boolean))],
         createdAt: this.createdAt
     };
 };

@@ -4,7 +4,7 @@ An online grocery store for Pakistan, built with the MERN stack: React 19 + Vite
 
 ## Quick start
 
-You need Node 20+ and MongoDB (local `mongod`, Docker, or a MongoDB Atlas URI).
+You need Node 20+ and MongoDB: a free MongoDB Atlas cluster (see [MongoDB Atlas setup](#mongodb-atlas-setup)), Docker, or a local `mongod`.
 
 ```bash
 # 1. API
@@ -22,7 +22,7 @@ npm run dev                   # http://localhost:5173
 
 Vite proxies `/api`, `/uploads` and `/sitemap.xml` to the API, so no CORS setup is needed in development.
 
-To check the API end to end (73 checks covering auth, pricing, stock, orders, reviews and admin access), run `npm run test:api` in `backend/` while the server is running against a freshly seeded database.
+To check the API end to end (81 checks covering auth, pricing, stock, orders, reviews, admin access and the shopping assistant), run `npm run test:api` in `backend/` while the server is running against a freshly seeded database.
 
 ### Demo accounts (created by `npm run seed`)
 
@@ -32,6 +32,49 @@ To check the API end to end (73 checks covering auth, pricing, stock, orders, re
 | Customer | `hira.siddiqui@example.pk`   | `Customer@123` |
 
 Admin sign-in lives at `/admin/login`. To promote any other account: `npm run make-admin -- someone@example.com`.
+
+### Sign-in with Firebase (email confirmation and Google)
+
+Accounts use Firebase Authentication (project `novacart-9b618`) for identity, and NovaCart's own session for everything else.
+
+- **Email sign-up:** Firebase creates the account and emails a confirmation link. The person cannot sign in until they click it. The sign-up page shows "Check your inbox" with a resend button (30 second cooldown), and the link brings them back to `/login?verified=1`.
+- **Email sign-in:** Firebase checks the password and that the email is confirmed. Unconfirmed accounts see a resend prompt instead of a session. "Forgot password?" sends a Firebase reset email.
+- **Google:** "Continue with Google" on the sign-in, sign-up and admin pages.
+- **Exchange:** the browser sends the Firebase ID token to `POST /api/auth/firebase`. The API verifies its signature against Google's public keys, plus issuer, audience and verified email (`backend/utils/firebaseAuth.js`, no service-account key needed). It then finds the account by Firebase uid, links an existing account with the same verified email, or creates a customer, and returns the normal NovaCart token. Baskets, orders and admin roles work the same for every sign-in method.
+- **Older accounts:** accounts that only exist in MongoDB (such as the seeded demo accounts) still sign in. If Firebase does not know the email, the sign-in falls back to the API password.
+
+Setup:
+- `frontend/.env` holds the Firebase web config (copy `frontend/.env.example`). These values are public identifiers, not secrets.
+- `backend/.env` sets `FIREBASE_PROJECT_ID=novacart-9b618`.
+- Firebase console, **Authentication → Sign-in method**: enable **Email/Password** and **Google**.
+- Firebase console, **Authentication → Settings → Authorized domains**: add every domain you deploy to (`localhost` is there by default).
+- Optional, **Authentication → Templates**: edit the sender name and wording of the confirmation and password reset emails, for example "NovaCart" and your support address.
+
+### MongoDB Atlas setup
+
+1. Sign in at [cloud.mongodb.com](https://cloud.mongodb.com) and create a project, for example `NovaCart`.
+2. **Create a cluster:** choose the free **M0** tier, provider AWS, and a nearby region (Mumbai `ap-south-1` is closest to Pakistan).
+3. **Database user:** Security → Database Access → Add New Database User. Choose password authentication, a username such as `novacart_app`, a generated password, and the role **Read and write to any database**. Save the password.
+4. **Network access:** Security → Network Access → Add IP Address. For development choose **Add current IP address**. For a hosted backend (Render, Railway and similar) add `0.0.0.0/0`, or that host's fixed outbound IPs if it has them.
+5. **Connection string:** Database → Connect → Drivers → Node.js. Copy the `mongodb+srv://` string, replace `<password>` with the user's password (URL-encode characters like `@` or `#`), and add the database name before the `?`:
+   ```
+   MONGO_URI=mongodb+srv://novacart_app:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/novacart?retryWrites=true&w=majority&appName=Cluster0
+   ```
+6. Put that line in `backend/.env`, then run `npm run seed` once to load the catalogue, demo accounts and orders, and `npm run dev`. The API logs `Connected to MongoDB (novacart)`.
+7. Check the data in Atlas under Database → Browse Collections: `products`, `users`, `orders`, `messages`, `subscribers`.
+
+If it does not connect: `bad auth` means the username or password is wrong (or not URL-encoded); a timeout usually means your IP is missing from Network Access.
+
+### Shopping assistant
+
+The chat button on every storefront page talks to `POST /api/assistant` (`backend/controllers/assistantController.js`). It is a rule-based engine over the live catalogue and the shopper's own orders, so it needs no external AI service or API key. It understands:
+
+- **Search:** "fruit under 400", "cheap vegetables", "do you have salmon?", "is broccoli available". It copes with typos ("tomatos") and Urdu names (aloo, pyaz, doodh, anday, chawal, chai, dahi).
+- **Basket:** "add 2 dozen eggs", "aloo chahiye", "remove bananas", "what's in my basket?", "checkout".
+- **Orders (signed in):** "where is my order", "track NC-261104-4821", "cancel my order" (asks for confirmation first), "order again".
+- **Store questions:** delivery areas and slots, payment, returns and refunds, contact, opening hours, sourcing.
+
+Product suggestions appear as cards with Add buttons that use the same basket as the rest of the site.
 
 ## Features
 
@@ -43,6 +86,8 @@ Admin sign-in lives at `/admin/login`. To promote any other account: `npm run ma
 - Slide-over basket with free-delivery progress, guest basket that merges into the account on sign-in
 - Checkout with saved address, delivery day and window picker, notes for the rider, cash on delivery
 - Order history, live tracking timeline, cancel (until it ships), order again, printable receipt
+- Shopping assistant chat on every page: finds products (understands Urdu names like aloo, doodh, anday), adds to the basket, tracks and cancels orders, answers delivery, payment and returns questions
+- Email sign-up with a confirmation link, Google sign-in, and password reset by email (Firebase Authentication)
 - Saved items, account details, address book and password change
 - Help centre, contact form, about, privacy and terms pages, branded 404
 - Light and dark themes (follows the device, or pick one), reduced-motion support, responsive down to 375 px
@@ -67,6 +112,7 @@ The client never decides what an order costs. `POST /api/orders` takes only prod
 ## Security notes
 
 - Passwords hashed with bcrypt; JWT (7 days) sent as a Bearer token
+- Google sign-in tokens are verified server-side (signature, issuer, audience, verified email) before an account is created or linked
 - Registration ignores any `role` in the request body, so admins are only created by the seed or `make-admin`
 - `protect` and `adminOnly` middleware on every private route; customers can only read their own orders
 - Failed sign-in attempts are rate limited per IP
@@ -77,7 +123,8 @@ The client never decides what an order costs. `POST /api/orders` takes only prod
 
 | Area | Endpoints |
 |------|-----------|
-| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
+| Auth | `POST /api/auth/firebase` (Firebase ID token), `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/auth/me` |
+| Assistant | `POST /api/assistant` `{ message, cart }` |
 | Products | `GET /api/products?q&category&minPrice&maxPrice&inStock&onSale&featured&sort&page&limit`, `GET /api/products/categories`, `GET /api/products/slug/:slug`, `POST/PUT/DELETE /api/products/:id` (admin), `POST/DELETE /api/products/:id/reviews` |
 | Basket and saved items | `GET/POST/DELETE /api/users/cart`, `POST /api/users/cart/merge`, `PUT/DELETE /api/users/cart/:productId`, `GET/POST /api/users/wishlist` |
 | Profile | `GET/PUT /api/users/profile`, `PUT /api/users/profile/password` |

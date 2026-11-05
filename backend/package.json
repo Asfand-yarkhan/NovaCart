@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node seed/seed.js",
     "make-admin": "node seed/make-admin.js",
-    "test:api": "node tests/api.test.mjs"
+    "test:api": "node tests/api.test.mjs",
+    "db:check": "node seed/db-check.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "jose": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.0",
     "multer": "^2.1.1",

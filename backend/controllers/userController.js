@@ -30,10 +30,11 @@ const updateProfile = async (req, res) => {
 // @route PUT /api/users/profile/password
 const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body || {};
-    if (!currentPassword || !newPassword) throw httpError(400, 'Enter your current and new password.');
+    if (!newPassword) throw httpError(400, 'Enter a new password.');
     if (String(newPassword).length < 6) throw httpError(400, 'New password must be at least 6 characters.');
     const user = await User.findById(req.user._id);
-    if (!(await user.matchPassword(currentPassword))) {
+    // Google-only accounts can set a first password without a current one
+    if (user.password && !(await user.matchPassword(currentPassword))) {
         return res.status(400).json({ message: 'Current password is incorrect.', fields: { currentPassword: 'Incorrect password' } });
     }
     user.password = newPassword;

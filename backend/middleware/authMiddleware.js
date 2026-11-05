@@ -11,7 +11,7 @@ const protect = async (req, res, next) => {
     if (!token) return res.status(401).json({ message: 'Please sign in to continue.' });
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.id).select('-password');
+        req.user = await User.findById(decoded.id); // only ever sent to clients via toPublic()
         if (!req.user) return res.status(401).json({ message: 'Your account no longer exists.' });
         next();
     } catch {
@@ -25,7 +25,7 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = await User.findById(decoded.id).select('-password');
+            req.user = await User.findById(decoded.id); // only ever sent to clients via toPublic()
         } catch { /* ignore invalid tokens on public routes */ }
     }
     next();

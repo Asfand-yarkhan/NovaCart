@@ -8,3 +8,4 @@ dist/
 Thumbs.db
 *.log
 test_auth.js
+demo/

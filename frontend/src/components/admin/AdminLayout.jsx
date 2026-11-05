@@ -16,7 +16,8 @@ const NAV = [
   { to: '/admin/orders', label: 'Orders', icon: 'fa-receipt' },
   { to: '/admin/products', label: 'Products', icon: 'fa-box' },
   { to: '/admin/users', label: 'Customers', icon: 'fa-user-group' },
-  { to: '/admin/messages', label: 'Messages', icon: 'fa-inbox', badge: true }
+  { to: '/admin/messages', label: 'Messages', icon: 'fa-inbox', badge: true },
+  { to: '/admin/account', label: 'Account', icon: 'fa-user-gear' }
 ];
 
 function SideContent({ unread, onSignOut }) {
@@ -33,13 +34,13 @@ function SideContent({ unread, onSignOut }) {
         ))}
       </nav>
       <div className="adm-side-foot">
-        <div className="adm-user">
+        <Link to="/admin/account" className="adm-user" aria-label={`${user?.name}, open your account`}>
           <span className="avatar" aria-hidden="true">{initials(user?.name)}</span>
           <div>
             <strong>{user?.name}</strong>
             <span>Store admin</span>
           </div>
-        </div>
+        </Link>
         <ThemeSelect />
         <div className="adm-side-links">
           <Link to="/"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />View store</Link>

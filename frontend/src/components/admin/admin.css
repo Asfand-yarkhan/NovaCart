@@ -379,3 +379,8 @@
 .adm-empty-inline i { display: block; font-size: 1.25rem; margin-bottom: var(--space-2); color: var(--ink-3); }
 a.adm-bar-row { border-radius: var(--r-xs); }
 a.adm-bar-row:hover .adm-bar-label { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Admin account page */
+.adm-account { display: grid; gap: var(--space-4); max-width: 760px; }
+a.adm-user { border-radius: var(--r-sm); transition: background-color var(--dur-fast); }
+a.adm-user:hover { background: var(--surface-2); }
